@@ -1,0 +1,11 @@
+{
+  "only": "./index.jsx",
+  "plugins": ["transform-react-jsx"],
+  "presets": [
+    ["env", {
+      "targets": {
+        "browsers": ["ie >= 9"]
+      }
+    }]
+  ]
+}
