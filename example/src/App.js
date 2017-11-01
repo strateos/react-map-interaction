@@ -6,7 +6,7 @@ import MapInteraction from 'react-map-interaction';
 class App extends Component {
   render() {
     return (
-      <MapInteraction>
+      <MapInteraction minScale={.05} maxScale={5}>
         <img src="/grid.png" style={{ pointerEvents: 'none' }} alt="" />
       </MapInteraction>
     );

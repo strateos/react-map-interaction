@@ -20,6 +20,27 @@ function eventNames() {
   };
 }
 
+const distance = (p1, p2) => {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(Math.pow(dx, 2), Math.pow(dy, 2));
+}
+
+const midpoint = (p1, p2) => {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
+}
+
+const touchPt = (touch) => {
+  return { x: touch.clientX, y: touch.clientY };
+};
+
+const coordChange = (coordinate, scaleRatio) => {
+  return (scaleRatio * coordinate) - coordinate;
+};
+
 /*
   This component provides a map like interaction to any content that you place in it. It will let
   the user zoom and pan the children by scaling and translating props.children using css.
@@ -63,6 +84,8 @@ class MapInteraction extends Component {
       }
     };
 
+    this.startTouchInfo = undefined;
+
     this.onDown = this.onDown.bind(this);
     this.onTouchDown = this.onTouchDown.bind(this);
 
@@ -75,8 +98,6 @@ class MapInteraction extends Component {
     this.onWheel = this.onWheel.bind(this);
   }
 
-  // Setup touch/mouse events.
-  // NOTE: Multi touch is not yet suppported.
   componentDidMount() {
     const events = eventNames();
     const handlers = this.handlers();
@@ -110,6 +131,15 @@ class MapInteraction extends Component {
     e.preventDefault();
     e.stopPropagation();
     this.onDown(e.touches[0]);
+
+    if (e.touches.length === 2) {
+      this.startTouchInfo = {
+        scale: this.state.scale,
+        translation: this.state.translation,
+        touches: e.touches
+      }
+      this.setState({ mouseDownCoords: undefined });
+    }
   }
 
   onUp() {
@@ -122,7 +152,10 @@ class MapInteraction extends Component {
   onTouchEnd(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.onUp();
+
+    if (e.touches.length < 2) {
+      this.startTouchInfo = undefined;
+    }
   }
 
   onMove(e) {
@@ -144,7 +177,14 @@ class MapInteraction extends Component {
   onTouchMove(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.onMove(e.touches[0]);
+
+    if (e.touches.length == 2) {
+      this.handleMultiTouchMove(e);
+    } else if (e.touches.length === 1) {
+      if (this.state.mouseDownCoords) {
+        this.onMove(e.touches[0]);
+      }
+    }
   }
 
   onWheel(e) {
@@ -161,16 +201,29 @@ class MapInteraction extends Component {
 
     const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY });
 
-    this.scale(newScale, mousePos);
+    this.scaleFromPoint(newScale, mousePos);
   }
 
-  clientPosToTranslatedPos({ x, y }) {
-    const clientOffset = this.containerNode.getBoundingClientRect();
-    const origin = {
-      x: clientOffset.left + this.state.translation.x,
-      y: clientOffset.top + this.state.translation.y
-    };
+  touchDistance(t0, t1) {
+    const p0 = touchPt(t0);
+    const p1 = touchPt(t1);
+    return distance(p0, p1);
+  }
 
+  handleMultiTouchMove(e) {
+    this.scaleFromMultiTouch(e);
+  }
+
+  translatedOrigin(translation = this.state.translation) {
+    const clientOffset = this.containerNode.getBoundingClientRect();
+    return {
+      x: clientOffset.left + translation.x,
+      y: clientOffset.top + translation.y
+    };
+  }
+
+  clientPosToTranslatedPos({ x, y }, translation = this.state.translation) {
+    const origin = this.translatedOrigin(translation);
     return {
       x: x - origin.x,
       y: y - origin.y
@@ -187,30 +240,57 @@ class MapInteraction extends Component {
     };
   }
 
-  /*
-    When the user zooms on a point we want that point to remain beneath
-    the users mouse as the scaling occurs. To do this we translate the element by the inverse
-    of the amount that the point would have changed given the new scale.
+  scaleFromPoint(newScale, focalPt) {
+    const { translation, scale } = this.state;
+    const scaleRatio = newScale / scale;
 
-    scale: int
-    focalPoint: {x, y} position relative to the translated origin
-  */
-  scale(scale, focalPoint) {
-    const scaleRatio = scale / this.state.scale;
-
-    const coordChange = coordinate => (scaleRatio * coordinate) - coordinate;
-
-    const changeInFocalPoint = {
-      x: coordChange(focalPoint.x),
-      y: coordChange(focalPoint.y)
+    const focalPtDelta = {
+      x: coordChange(focalPt.x, scaleRatio),
+      y: coordChange(focalPt.y, scaleRatio)
     };
 
-    const translation = {
-      x: this.state.translation.x - changeInFocalPoint.x,
-      y: this.state.translation.y - changeInFocalPoint.y
+    const newTranslation = {
+      x: translation.x - focalPtDelta.x,
+      y: translation.y - focalPtDelta.y
     };
 
-    this.setState({ scale, translation });
+    this.setState({ scale: newScale, translation: newTranslation });
+  }
+
+  scaleFromMultiTouch(e) {
+    const startTouches = this.startTouchInfo.touches;
+    const newTouches   = e.touches;
+
+    // calculate new scale
+    const dist0       = this.touchDistance(startTouches[0], startTouches[1]);
+    const dist1       = this.touchDistance(newTouches[0], newTouches[1]);
+    const scaleChange = dist1 / dist0;
+    const targetScale = this.startTouchInfo.scale + (scaleChange - 1);
+    const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
+
+    // calculate mid points
+    const newMidPoint   = midpoint(touchPt(newTouches[0]), touchPt(newTouches[1]));
+    const startMidpoint = midpoint(touchPt(startTouches[0]), touchPt(startTouches[1]))
+
+    const dragDelta = {
+      x: newMidPoint.x - startMidpoint.x,
+      y: newMidPoint.y - startMidpoint.y
+    };
+
+    const scaleRatio = newScale / this.startTouchInfo.scale;
+
+    const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startTouchInfo.translation);
+    const focalPtDelta = {
+      x: coordChange(focalPt.x, scaleRatio),
+      y: coordChange(focalPt.y, scaleRatio)
+    };
+
+    const newTranslation = {
+      x: this.startTouchInfo.translation.x - focalPtDelta.x + dragDelta.x,
+      y: this.startTouchInfo.translation.y - focalPtDelta.y + dragDelta.y
+    };
+
+    this.setState({ scale: newScale, translation: newTranslation });
   }
 
   discreteScaleStepSize() {
@@ -229,7 +309,7 @@ class MapInteraction extends Component {
     const y = rect.top + (rect.height / 2);
 
     const focalPoint = this.clientPosToTranslatedPos({ x, y });
-    this.scale(scale, focalPoint);
+    this.scaleFromPoint(scale, focalPoint);
   }
 
   renderControls() {
@@ -249,12 +329,11 @@ class MapInteraction extends Component {
   }
 
   render() {
+    const { showControls, bkgColor, children } = this.props;
     const { scale, translation } = this.state;
 
     // Translate first and then scale.  Otherwise, the scale would affect the translation.
     const transform = `translate(${translation.x}px, ${translation.y}px) scale(${scale})`;
-
-    const showControls = this.props.showControls || undefined;
 
     /* eslint-disable jsx-a11y/no-static-element-interactions */
     return (
@@ -265,7 +344,7 @@ class MapInteraction extends Component {
           height: '100%',
           width: '100%',
           position: 'relative', // for absolutely positioned children
-          backgroundColor: this.props.bkgColor,
+          backgroundColor: bkgColor,
           overflow: 'hidden',
           touchAction: 'none', // Not supported in Safari :(
           msTouchAction: 'none',
@@ -281,9 +360,9 @@ class MapInteraction extends Component {
             transformOrigin: '0 0 '
           }}
         >
-          {this.props.children}
+          {children}
         </div>
-        {showControls && this.renderControls()}
+        {(showControls || undefined) && this.renderControls()}
       </div>
     );
     /* eslint-enable jsx-a11y/no-static-element-interactions */
