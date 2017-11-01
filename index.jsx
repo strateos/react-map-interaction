@@ -20,6 +20,19 @@ function eventNames() {
   };
 }
 
+const distance = (p1, p2) => {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(Math.pow(dx, 2), Math.pow(dy, 2));
+}
+
+const midpoint = (p1, p2) => {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
+}
+
 /*
   This component provides a map like interaction to any content that you place in it. It will let
   the user zoom and pan the children by scaling and translating props.children using css.
@@ -63,6 +76,8 @@ class MapInteraction extends Component {
       }
     };
 
+    this.startTouchInfo = undefined;
+
     this.onDown = this.onDown.bind(this);
     this.onTouchDown = this.onTouchDown.bind(this);
 
@@ -75,8 +90,6 @@ class MapInteraction extends Component {
     this.onWheel = this.onWheel.bind(this);
   }
 
-  // Setup touch/mouse events.
-  // NOTE: Multi touch is not yet suppported.
   componentDidMount() {
     const events = eventNames();
     const handlers = this.handlers();
@@ -110,6 +123,13 @@ class MapInteraction extends Component {
     e.preventDefault();
     e.stopPropagation();
     this.onDown(e.touches[0]);
+
+    if (e.touches.length === 2) {
+      this.startTouchInfo = {
+        scale: this.state.scale,
+        touches: e.touches
+      }
+    }
   }
 
   onUp() {
@@ -122,7 +142,10 @@ class MapInteraction extends Component {
   onTouchEnd(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.onUp();
+
+    if (e.touches.length < 2) {
+      this.startTouchInfo = undefined;
+    }
   }
 
   onMove(e) {
@@ -144,7 +167,10 @@ class MapInteraction extends Component {
   onTouchMove(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.onMove(e.touches[0]);
+
+    e.touches.length === 1 ?
+      this.onMove(e.touches[0]) :
+      this.handleMultiTouchMove(e);
   }
 
   onWheel(e) {
@@ -164,13 +190,51 @@ class MapInteraction extends Component {
     this.scale(newScale, mousePos);
   }
 
-  clientPosToTranslatedPos({ x, y }) {
+  touchToPoint(touch) {
+    return { x: touch.clientX, y: touch.clientY };
+  }
+
+  touchDistance(t0, t1) {
+    const p0 = this.touchToPoint(t0);
+    const p1 = this.touchToPoint(t1);
+    return distance(p0, p1);
+  }
+
+  handleMultiTouchMove(e) {
+    const dist0 = this.touchDistance(this.startTouchInfo.touches[0], this.startTouchInfo.touches[1]);
+    const dist1 = this.touchDistance(e.touches[0], e.touches[1]);
+
+    const scaleChange = dist1 / dist0;
+
+    const p0 = this.touchToPoint(this.startTouchInfo.touches[0]);
+    const p1 = this.touchToPoint(this.startTouchInfo.touches[1]);
+    const mid = midpoint(p0, p1);
+
+    const newScale = clamp(
+      this.props.minScale,
+      this.startTouchInfo.scale + (scaleChange - 1),
+      this.props.maxScale
+    );
+
+    if (this.props.debug) {
+      this.p0 = p0;
+      this.p1 = p1;
+      this.mid = mid;
+    }
+
+    this.scale(newScale, this.clientPosToTranslatedPos(mid));
+  }
+
+  translatedOrigin() {
     const clientOffset = this.containerNode.getBoundingClientRect();
-    const origin = {
+    return {
       x: clientOffset.left + this.state.translation.x,
       y: clientOffset.top + this.state.translation.y
     };
+  }
 
+  clientPosToTranslatedPos({ x, y }) {
+    const origin = this.translatedOrigin();
     return {
       x: x - origin.x,
       y: y - origin.y
@@ -248,6 +312,36 @@ class MapInteraction extends Component {
     );
   }
 
+  renderDebug() {
+    return (
+      <div>
+        <div style={{ position: 'fixed', left: 10, right: 20 }}>
+          <div>Scale: {this.state.scale}</div>
+          <div>Mid: {JSON.stringify(this.mid)}</div>
+          <div>p1: {JSON.stringify(this.p1)}</div>
+        </div>
+
+        {this.mid ? (
+          <div style={{ position: 'absolute', left: this.mid.x, top: this.mid.y, color: 'red' }}>
+            mid
+          </div>
+        ) : undefined}
+
+        {this.p0 ? (
+          <div style={{ position: 'absolute', left: this.p0.x, top: this.p0.y, color: 'red' }}>
+            p0
+          </div>
+        ) : undefined}
+
+        {this.p1 ? (
+          <div style={{ position: 'absolute', left: this.p1.x, top: this.p1.y, color: 'red' }}>
+            p1
+          </div>
+        ) : undefined}
+      </div>
+    )
+  }
+
   render() {
     const { scale, translation } = this.state;
 
@@ -275,6 +369,7 @@ class MapInteraction extends Component {
           msUserSelect: 'none'
         }}
       >
+        {this.props.debug ? this.renderDebug() : undefined}
         <div
           style={{
             transform: transform,
