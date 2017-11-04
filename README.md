@@ -1,37 +1,48 @@
 # react-map-interaction
 
-Add google map like zooming and panning to any element. The zoom is centered around the user's cursor so you can zoom in on particular areas. The mouse wheel controls zoom. Clicking and dragging controls panning.
+Add map like zooming and panning to any React element. This works on both touch devices (pinch to zoom, drag to pan) as well as with a mouse or trackpad (wheel scroll to zoom, mouse drag to pan).
 
 ![alt tag](./example.gif)
 
-## Example
+## Examples
 
 ```js
-import MapInteraction from 'react-map-interaction';
+import { MapInteractionCSS } from 'react-map-interaction';
 
-// Now the user can zoom and pan thing.png
+// This component uses CSS to scale your content.
+// Just pass in content as children and it will take care of the rest.
 const ThingMap = () => {
   return (
-    <MapInteraction>
+    <MapInteractionCSS>
       <img src="path/to/thing.png" />
-    </MapInteraction>
+    </MapInteractionCSS>
   );
 }
 ```
 
-## Prop Types (all optional)
+```js
+import { MapInteraction } from 'react-map-interaction';
+
+// Use MapInteraction if you want to determine how to use the resulting translation.
+const ImInControl = () => {
+  <MapInteraction>
+    {
+      ({ translation, scale }) => { /* Use the passed values to scale content on your own. */ }
+    }
+  </MapInteraction>
+}
+```
+
+## Prop Types for MapInteractionCSS (all optional)
 ```js
 {
   // Initial x/y coordinates
   initialX: PropTypes.number,
   initialY: PropTypes.number,
 
-  // The min and max of the scale of the zoom
+  // The min and max of the scale of the zoom. Must be > 0.
   minScale: PropTypes.number,
   maxScale: PropTypes.number,
-
-  // Background color of the entire element
-  bkgColor: PropTypes.string,
 
   // When 'showControls' is 'true', plus/minus buttons are rendered
   // that let the user control the zoom factor
@@ -44,4 +55,17 @@ const ThingMap = () => {
   // Class applied to the plus/minus buttons (only when 'showControls' is 'true')
   btnClass: PropTypes.string
 };
+```
+
+## Prop Types for MapInteraction (all optional)
+```js
+{
+  // Function called with an object { translation, scale }
+  // translation: { x: number, y: number }, The current origin of the content
+  // scale:       number, The current multiplier mapping original coordinates to current coordinates
+  children: PropTypes.func,
+
+  // The rest of the prop types are the same as MapInteractionCSS
+  ...MapInteractionCSS.propTypes,
+}
 ```

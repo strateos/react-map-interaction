@@ -37,22 +37,30 @@ const touchPt = (touch) => {
   return { x: touch.clientX, y: touch.clientY };
 };
 
+const touchDistance = (t0, t1) => {
+  const p0 = touchPt(t0);
+  const p1 = touchPt(t1);
+  return distance(p0, p1);
+};
+
 const coordChange = (coordinate, scaleRatio) => {
   return (scaleRatio * coordinate) - coordinate;
 };
 
 /*
-  This component provides a map like interaction to any content that you place in it. It will let
-  the user zoom and pan the children by scaling and translating props.children using css.
+  This contains logic for providing a map-like interaction to any DOM node.
+  It allows a user to pinch, zoom, translate, etc, as they would an interactive map.
+  It renders its children with the current state of the translation and  does not do any  scaling
+  or translating on its own. This works on both desktop, and mobile.
 */
 class MapInteraction extends Component {
   static get propTypes() {
     return {
+      children: PropTypes.func,
       initialX: PropTypes.number,
       initialY: PropTypes.number,
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
-      bkgColor: PropTypes.string,
       showControls: PropTypes.bool,
       plusBtnContents: PropTypes.node,
       minusBtnContents: PropTypes.node,
@@ -66,7 +74,6 @@ class MapInteraction extends Component {
       initialY: 0,
       minScale: 0.05,
       maxScale: 3,
-      bkgColor: undefined,
       showControls: false
     };
   }
@@ -75,7 +82,8 @@ class MapInteraction extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      // todo rename since this supports touch and mouse events
+      // TODO rename mouseDownCoords since this supports touch and mouse events
+      // TODO remove mouseDownCoords from state
       mouseDownCoords: undefined,
       scale: 1,
       translation: {
@@ -204,12 +212,6 @@ class MapInteraction extends Component {
     this.scaleFromPoint(newScale, mousePos);
   }
 
-  touchDistance(t0, t1) {
-    const p0 = touchPt(t0);
-    const p1 = touchPt(t1);
-    return distance(p0, p1);
-  }
-
   handleMultiTouchMove(e) {
     this.scaleFromMultiTouch(e);
   }
@@ -262,8 +264,8 @@ class MapInteraction extends Component {
     const newTouches   = e.touches;
 
     // calculate new scale
-    const dist0       = this.touchDistance(startTouches[0], startTouches[1]);
-    const dist1       = this.touchDistance(newTouches[0], newTouches[1]);
+    const dist0       = touchDistance(startTouches[0], startTouches[1]);
+    const dist1       = touchDistance(newTouches[0], newTouches[1]);
     const scaleChange = dist1 / dist0;
     const targetScale = this.startTouchInfo.scale + (scaleChange - 1);
     const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
@@ -329,45 +331,62 @@ class MapInteraction extends Component {
   }
 
   render() {
-    const { showControls, bkgColor, children } = this.props;
+    const { showControls, children } = this.props;
     const { scale, translation } = this.state;
 
-    // Translate first and then scale.  Otherwise, the scale would affect the translation.
-    const transform = `translate(${translation.x}px, ${translation.y}px) scale(${scale})`;
-
-    /* eslint-disable jsx-a11y/no-static-element-interactions */
     return (
       <div
         ref={(node) => { this.containerNode = node; }}
         onWheel={this.onWheel}
-        style={{
-          height: '100%',
-          width: '100%',
-          position: 'relative', // for absolutely positioned children
-          backgroundColor: bkgColor,
-          overflow: 'hidden',
-          touchAction: 'none', // Not supported in Safari :(
-          msTouchAction: 'none',
-          cursor: 'all-scroll',
-          WebkitUserSelect: 'none',
-          MozUserSelect: 'none',
-          msUserSelect: 'none'
-        }}
       >
-        <div
-          style={{
-            transform: transform,
-            transformOrigin: '0 0 '
-          }}
-        >
-          {children}
-        </div>
+        {(children || undefined) && children({ translation, scale })}
         {(showControls || undefined) && this.renderControls()}
       </div>
     );
-    /* eslint-enable jsx-a11y/no-static-element-interactions */
   }
 }
+
+/*
+  This component provides a map like interaction to any content that you place in it. It will let
+  the user zoom and pan the children by scaling and translating props.children using css.
+*/
+const MapInteractionCSS = (props) => {
+  return (
+    <MapInteraction {...props}>
+      {
+        ({ translation, scale }) => {
+          // Translate first and then scale.  Otherwise, the scale would affect the translation.
+          const transform = `translate(${translation.x}px, ${translation.y}px) scale(${scale})`;
+          return (
+            <div
+              style={{
+                height: '100%',
+                width: '100%',
+                position: 'relative', // for absolutely positioned children
+                overflow: 'hidden',
+                touchAction: 'none', // Not supported in Safari :(
+                msTouchAction: 'none',
+                cursor: 'all-scroll',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none'
+              }}
+            >
+              <div
+                style={{
+                  transform: transform,
+                  transformOrigin: '0 0 '
+                }}
+              >
+                {props.children}
+              </div>
+            </div>
+          );
+        }
+      }
+    </MapInteraction>
+  );
+};
 
 class Controls extends Component {
   render() {
@@ -431,4 +450,5 @@ Controls.defaultProps = {
   minusBtnContents: '-'
 };
 
+export { MapInteractionCSS, MapInteraction };
 export default MapInteraction;
