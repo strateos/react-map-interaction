@@ -81,10 +81,8 @@ class MapInteraction extends Component {
 
   constructor(props) {
     super(props);
+
     this.state = {
-      // TODO rename mouseDownCoords since this supports touch and mouse events
-      // TODO remove mouseDownCoords from state
-      mouseDownCoords: undefined,
       scale: 1,
       translation: {
         x: -props.initialX,
@@ -92,15 +90,15 @@ class MapInteraction extends Component {
       }
     };
 
-    this.startTouchInfo = undefined;
+    this.startPointerInfo = undefined;
 
-    this.onDown = this.onDown.bind(this);
+    this.onMouseDown = this.onMouseDown.bind(this);
     this.onTouchDown = this.onTouchDown.bind(this);
 
-    this.onMove = this.onMove.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
     this.onTouchMove = this.onTouchMove.bind(this);
 
-    this.onUp = this.onUp.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
     this.onTouchEnd = this.onTouchEnd.bind(this);
 
     this.onWheel = this.onWheel.bind(this);
@@ -122,64 +120,33 @@ class MapInteraction extends Component {
     this.containerNode.removeEventListener(events.down, handlers.down);
     window.removeEventListener(events.move, handlers.move);
     window.removeEventListener(events.up, handlers.up);
-
   }
 
-  onDown(e) {
-    this.setState({
-      mouseDownCoords: {
-        x: e.clientX,
-        y: e.clientY,
-        translation: this.state.translation
-      }
-    });
+  onMouseDown(e) {
+    this.setPointerState([e]);
   }
 
   onTouchDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.onDown(e.touches[0]);
-
-    if (e.touches.length === 2) {
-      this.startTouchInfo = {
-        scale: this.state.scale,
-        translation: this.state.translation,
-        touches: e.touches
-      }
-      this.setState({ mouseDownCoords: undefined });
-    }
+    this.setPointerState(e.touches);
   }
 
-  onUp() {
-    const coords = this.state.mouseDownCoords;
-    if (coords) {
-      this.setState({ mouseDownCoords: undefined });
-    }
+  onMouseUp() {
+    this.setPointerState();
   }
 
   onTouchEnd(e) {
     e.preventDefault();
     e.stopPropagation();
-
-    if (e.touches.length < 2) {
-      this.startTouchInfo = undefined;
-    }
+    this.setPointerState(e.touches);
   }
 
-  onMove(e) {
-    const { mouseDownCoords } = this.state;
-    if (!mouseDownCoords) {
+  onMouseMove(e) {
+    if (!this.startPointerInfo) {
       return;
     }
-
-    const { x, y, translation } = mouseDownCoords;
-
-    this.setState({
-      translation: {
-        x: translation.x + (e.clientX - x),
-        y: translation.y + (e.clientY - y)
-      }
-    });
+    this.onDrag(e);
   }
 
   onTouchMove(e) {
@@ -187,12 +154,23 @@ class MapInteraction extends Component {
     e.stopPropagation();
 
     if (e.touches.length == 2) {
-      this.handleMultiTouchMove(e);
-    } else if (e.touches.length === 1) {
-      if (this.state.mouseDownCoords) {
-        this.onMove(e.touches[0]);
-      }
+      this.scaleFromMultiTouch(e);
+    } else if (e.touches.length === 1 && this.startPointerInfo) {
+      this.onDrag(e.touches[0]);
     }
+  }
+
+  // handles both touch and mouse drags
+  onDrag(pointer) {
+    const { translation, pointers } = this.startPointerInfo;
+    const startPointer = pointers[0];
+
+    this.setState({
+      translation: {
+        x: translation.x + (pointer.clientX - startPointer.clientX),
+        y: translation.y + (pointer.clientY - startPointer.clientY)
+      }
+    });
   }
 
   onWheel(e) {
@@ -212,8 +190,17 @@ class MapInteraction extends Component {
     this.scaleFromPoint(newScale, mousePos);
   }
 
-  handleMultiTouchMove(e) {
-    this.scaleFromMultiTouch(e);
+  setPointerState(pointers) {
+    if (!pointers) {
+      this.startPointerInfo = undefined;
+      return;
+    }
+
+    this.startPointerInfo = {
+      pointers,
+      scale: this.state.scale,
+      translation: this.state.translation,
+    }
   }
 
   translatedOrigin(translation = this.state.translation) {
@@ -236,9 +223,9 @@ class MapInteraction extends Component {
     const isTouch = isTouchDevice();
 
     return {
-      down: isTouch ? this.onTouchDown : this.onDown,
-      move: isTouch ? this.onTouchMove : this.onMove,
-      up:   isTouch ? this.onTouchEnd : this.onUp
+      down: isTouch ? this.onTouchDown : this.onMouseDown,
+      move: isTouch ? this.onTouchMove : this.onMouseMove,
+      up:   isTouch ? this.onTouchEnd : this.onMouseUp
     };
   }
 
@@ -260,14 +247,14 @@ class MapInteraction extends Component {
   }
 
   scaleFromMultiTouch(e) {
-    const startTouches = this.startTouchInfo.touches;
+    const startTouches = this.startPointerInfo.pointers;
     const newTouches   = e.touches;
 
     // calculate new scale
     const dist0       = touchDistance(startTouches[0], startTouches[1]);
     const dist1       = touchDistance(newTouches[0], newTouches[1]);
     const scaleChange = dist1 / dist0;
-    const targetScale = this.startTouchInfo.scale + (scaleChange - 1);
+    const targetScale = this.startPointerInfo.scale + (scaleChange - 1);
     const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
 
     // calculate mid points
@@ -279,17 +266,17 @@ class MapInteraction extends Component {
       y: newMidPoint.y - startMidpoint.y
     };
 
-    const scaleRatio = newScale / this.startTouchInfo.scale;
+    const scaleRatio = newScale / this.startPointerInfo.scale;
 
-    const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startTouchInfo.translation);
+    const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startPointerInfo.translation);
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
       y: coordChange(focalPt.y, scaleRatio)
     };
 
     const newTranslation = {
-      x: this.startTouchInfo.translation.x - focalPtDelta.x + dragDelta.x,
-      y: this.startTouchInfo.translation.y - focalPtDelta.y + dragDelta.y
+      x: this.startPointerInfo.translation.x - focalPtDelta.x + dragDelta.x,
+      y: this.startPointerInfo.translation.y - focalPtDelta.y + dragDelta.y
     };
 
     this.setState({ scale: newScale, translation: newTranslation });
