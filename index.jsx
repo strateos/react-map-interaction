@@ -152,7 +152,11 @@ class MapInteraction extends Component {
     e.preventDefault();
     e.stopPropagation();
 
-    if (e.touches.length == 2) {
+    if (!this.startPointerInfo) {
+      return;
+    }
+
+    if (e.touches.length == 2 && this.startPointerInfo.pointers.length > 1) {
       this.scaleFromMultiTouch(e);
     } else if (e.touches.length === 1 && this.startPointerInfo) {
       this.onDrag(e.touches[0]);
