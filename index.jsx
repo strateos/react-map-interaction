@@ -1,16 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-const clamp = (min, value, max) =>
-  Math.max(min, Math.min(value, max));
+const clamp = (min, value, max) => Math.max(min, Math.min(value, max));
 
-function isTouchDevice() {
+const isTouchDevice = () => {
   return (('ontouchstart' in window) ||
     (navigator.MaxTouchPoints > 0) ||
     (navigator.msMaxTouchPoints > 0));
 }
 
-function eventNames() {
+const eventNames = () => {
   const isTouch = isTouchDevice();
 
   return {
