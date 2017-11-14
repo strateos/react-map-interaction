@@ -379,10 +379,31 @@ const MapInteractionCSS = (props) => {
 };
 
 class Controls extends Component {
+  componentDidMount() {
+    this.setPointerHandlers()
+  }
+
+  setPointerHandlers() {
+    const { onClickPlus, onClickMinus } = this.props;
+
+    const plusHandler = () => {
+      this.plusNode.blur();
+      onClickPlus();
+    };
+
+    const minusHandler = () => {
+      this.minusNode.blur();
+      onClickMinus();
+    };
+
+    const eventName = isTouchDevice() ? 'touchstart' : 'click';
+
+    this.plusNode.addEventListener(eventName, plusHandler);
+    this.minusNode.addEventListener(eventName, minusHandler);
+  }
+
   render() {
     const {
-      onClickPlus,
-      onClickMinus,
       plusBtnContents,
       minusBtnContents,
       btnClass,
@@ -391,16 +412,15 @@ class Controls extends Component {
       maxScale
     } = this.props;
 
+    const btnStyle = btnClass ? undefined : { width: 30, paddingTop: 5, marginBottom: 5 };
+
     return (
       <div style={{ position: 'absolute', right: 10, top: 10 }}>
         <div>
           <button
             ref={(node) => { this.plusNode = node; }}
-            onClick={() => {
-              this.plusNode.blur();
-              onClickPlus();
-            }}
             className={btnClass}
+            style={btnStyle}
             disabled={scale >= maxScale}
           >
             {plusBtnContents}
@@ -409,11 +429,8 @@ class Controls extends Component {
         <div>
           <button
             ref={(node) => { this.minusNode = node; }}
-            onClick={() => {
-              this.minusNode.blur();
-              onClickMinus();
-            }}
             className={btnClass}
+            style={btnStyle}
             disabled={scale <= minScale}
           >
             {minusBtnContents}
