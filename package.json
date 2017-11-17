@@ -17,7 +17,7 @@
     "map"
   ],
   "author": "Transcriptic",
-  "private": "false",
+  "private": false,
   "license": "MIT",
   "dependencies": {
     "prop-types": ">=15.0",
