@@ -12,6 +12,8 @@
     "react",
     "zoom",
     "pan",
+    "pinch",
+    "data visualization",
     "map"
   ],
   "author": "Transcriptic",
