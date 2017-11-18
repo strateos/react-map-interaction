@@ -328,6 +328,11 @@ class MapInteraction extends Component {
       <div
         ref={(node) => { this.containerNode = node; }}
         onWheel={this.onWheel}
+        style={{
+          height: '100%',
+          width: '100%',
+          position: 'relative', // for absolutely positioned children
+        }}
       >
         {(children || undefined) && children({ translation, scale })}
         {(showControls || undefined) && this.renderControls()}
