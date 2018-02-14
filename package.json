@@ -20,7 +20,9 @@
   "private": false,
   "license": "MIT",
   "dependencies": {
-    "prop-types": ">=15.0",
+    "prop-types": ">=15.0"
+  },
+  "peerDependencies": {
     "react": ">=0.14"
   },
   "devDependencies": {
