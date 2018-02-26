@@ -86,7 +86,8 @@ class MapInteraction extends Component {
       translation: {
         x: -props.initialX,
         y: -props.initialY
-      }
+      },
+      dragged: false
     };
 
     this.startPointerInfo = undefined;
@@ -167,12 +168,15 @@ class MapInteraction extends Component {
   onDrag(pointer) {
     const { translation, pointers } = this.startPointerInfo;
     const startPointer = pointers[0];
+    const dragX = pointer.clientX - startPointer.clientX;
+    const dragY = pointer.clientY - startPointer.clientY;
 
     this.setState({
       translation: {
-        x: translation.x + (pointer.clientX - startPointer.clientX),
-        y: translation.y + (pointer.clientY - startPointer.clientY)
-      }
+        x: translation.x + dragX,
+        y: translation.y + dragY
+      },
+      dragged: Boolean(dragX || dragY)
     });
   }
 
@@ -332,6 +336,12 @@ class MapInteraction extends Component {
           height: '100%',
           width: '100%',
           position: 'relative', // for absolutely positioned children
+        }}
+        onClickCapture={(e) => {
+          if (this.state.dragged) {
+            e.stopPropagation();
+            this.setState({ dragged: false });
+          }
         }}
       >
         {(children || undefined) && children({ translation, scale })}
