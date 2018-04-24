@@ -87,7 +87,7 @@ class MapInteraction extends Component {
         x: -props.initialX,
         y: -props.initialY
       },
-      dragged: false
+      stopClickPropagation: false
     };
 
     this.startPointerInfo = undefined;
@@ -128,7 +128,6 @@ class MapInteraction extends Component {
 
   onTouchDown(e) {
     e.preventDefault();
-    e.stopPropagation();
     this.setPointerState(e.touches);
   }
 
@@ -137,8 +136,6 @@ class MapInteraction extends Component {
   }
 
   onTouchEnd(e) {
-    e.preventDefault();
-    e.stopPropagation();
     this.setPointerState(e.touches);
   }
 
@@ -151,7 +148,6 @@ class MapInteraction extends Component {
 
   onTouchMove(e) {
     e.preventDefault();
-    e.stopPropagation();
 
     if (!this.startPointerInfo) {
       return;
@@ -176,7 +172,7 @@ class MapInteraction extends Component {
         x: translation.x + dragX,
         y: translation.y + dragY
       },
-      dragged: Boolean(dragX || dragY)
+      stopClickPropagation: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
     });
   }
 
@@ -327,7 +323,12 @@ class MapInteraction extends Component {
   render() {
     const { showControls, children } = this.props;
     const { scale, translation } = this.state;
-
+    const touchEndHandler = (e) => {
+      if (this.state.stopClickPropagation) {
+        e.stopPropagation();
+        this.setState({ stopClickPropagation: false });
+      }
+    }
     return (
       <div
         ref={(node) => { this.containerNode = node; }}
@@ -337,12 +338,8 @@ class MapInteraction extends Component {
           width: '100%',
           position: 'relative', // for absolutely positioned children
         }}
-        onClickCapture={(e) => {
-          if (this.state.dragged) {
-            e.stopPropagation();
-            this.setState({ dragged: false });
-          }
-        }}
+        onClickCapture={touchEndHandler}
+        onTouchEndCapture={touchEndHandler}
       >
         {(children || undefined) && children({ translation, scale })}
         {(showControls || undefined) && this.renderControls()}

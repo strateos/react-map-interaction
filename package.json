@@ -19,11 +19,9 @@
   "author": "Transcriptic",
   "private": false,
   "license": "MIT",
-  "dependencies": {
-    "prop-types": ">=15.0"
-  },
   "peerDependencies": {
-    "react": ">=0.14"
+    "react": ">=0.14",
+    "prop-types": ">=15.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

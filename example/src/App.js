@@ -19,7 +19,18 @@ class App extends Component {
     return (
       <div style={style}>
         <MapInteractionCSS minScale={.05} maxScale={5} showControls>
-          <img src="/grid.png" style={{ pointerEvents: 'none' }} alt="" />
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 30, top: 30 }}>
+              <button
+                onClick={() => console.log('Click')}
+                onTouchEnd={() => console.log('TouchEnd')}
+                onTouchStart={() => console.log('TouchStart')}
+              >
+                Touch/Click Test
+              </button>
+            </div>
+            <img src="/grid.png" style={{ pointerEvents: 'none' }} alt="" />
+          </div>
         </MapInteractionCSS>
       </div>
     );
