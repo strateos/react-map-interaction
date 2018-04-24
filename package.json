@@ -1,6 +1,6 @@
 {
   "name": "react-map-interaction",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "'Add map like zooming and dragging to any element'",
   "main": "dist/react-map-interaction.js",
   "scripts": {
