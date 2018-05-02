@@ -11,6 +11,7 @@ npm install --save react-map-interaction
 
 ## Examples
 
+### Basic
 ```js
 import { MapInteractionCSS } from 'react-map-interaction';
 
@@ -25,11 +26,12 @@ const ThingMap = () => {
 }
 ```
 
+### Usage without CSS
 ```js
 import { MapInteraction } from 'react-map-interaction';
 
 // Use MapInteraction if you want to determine how to use the resulting translation.
-const ImInControl = () => {
+const NotUsingCSS = () => {
   <MapInteraction>
     {
       ({ translation, scale }) => { /* Use the passed values to scale content on your own. */ }
@@ -38,12 +40,51 @@ const ImInControl = () => {
 }
 ```
 
+### Controlled
+```js
+import { MapInteractionCSS } from 'react-map-interaction';
+
+// If you want to have control over the scale and translation,
+// then use the `scale`, `translation`, and `onChange` props.
+class Controlled extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      scale: 1,
+      translation: { x: 0, y: 0 }
+    };
+  }
+
+  render() {
+    const { scale, translation } = this.state;
+    return (
+      <MapInteractionCSS
+        scale={scale}
+        translation={translation}
+        onChange={({ scale, translation }) => this.setState({ scale, translation })}
+      >
+        <img src="path/to/thing.png" />
+      </MapInteractionCSS>
+    );
+  }
+}
+```
+
 ## Prop Types for MapInteractionCSS (all optional)
+MapInteraction doesn't require any props. It will control its own internal state, and pass values to its children. If you need to control the scale and translation then you can pass those values as props and listen to the onChange event to receive updates.
 ```js
 {
-  // Initial x/y coordinates
-  initialX: PropTypes.number,
-  initialY: PropTypes.number,
+  // The scale applied to the dimensions of the contents. A scale of 1 means the
+  // contents appear at actual size, greater than 1 is zoomed, and between 0 and 1 is shrunken.
+  scale: PropTypes.number,
+  defaultScale: PropTypes.number,
+
+  // The distance in pixels to translate the contents by.
+  translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+  defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+
+  // Called with an object { scale, translation }
+  onChange: PropTypes.func,
 
   // The min and max of the scale of the zoom. Must be > 0.
   minScale: PropTypes.number,
