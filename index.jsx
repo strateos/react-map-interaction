@@ -56,8 +56,11 @@ class MapInteraction extends Component {
   static get propTypes() {
     return {
       children: PropTypes.func,
-      initialX: PropTypes.number,
-      initialY: PropTypes.number,
+      scale: PropTypes.number,
+      translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+      defaultScale: PropTypes.number,
+      defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+      onChange: PropTypes.func,
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
       showControls: PropTypes.bool,
@@ -69,24 +72,28 @@ class MapInteraction extends Component {
 
   static get defaultProps() {
     return {
-      initialX: 0,
-      initialY: 0,
       minScale: 0.05,
       maxScale: 3,
       showControls: false
     };
   }
 
-
   constructor(props) {
     super(props);
+    const { scale, defaultScale, translation, defaultTranslation, minScale, maxScale } = props;
+
+    let desiredScale;
+    if (scale != undefined) {
+      desiredScale = scale;
+    } else if (defaultScale != undefined) {
+      desiredScale = defaultScale;
+    } else {
+      desiredScale = 1;
+    }
 
     this.state = {
-      scale: 1,
-      translation: {
-        x: -props.initialX,
-        y: -props.initialY
-      },
+      scale: clamp(minScale, desiredScale, maxScale),
+      translation: translation || defaultTranslation || { x: 0, y: 0 },
       stopClickPropagation: false
     };
 
@@ -113,6 +120,25 @@ class MapInteraction extends Component {
     window.addEventListener(events.up, handlers.up);
   }
 
+  componentWillReceiveProps(newProps) {
+    const scale = (newProps.scale != undefined) ? newProps.scale : this.state.scale;
+    const translation = newProps.translation || this.state.translation;
+
+    // if parent has overridden state then abort current user interaction
+    if (
+      translation.x != this.state.translation.x ||
+      translation.y != this.state.translation.y ||
+      scale != this.state.scale
+    ) {
+      this.setPointerState();
+    }
+
+    this.setState({
+      scale: clamp(newProps.minScale, scale, newProps.maxScale),
+      translation
+    });
+  }
+
   componentWillUnmount() {
     const events = eventNames();
     const handlers = this.handlers();
@@ -120,6 +146,11 @@ class MapInteraction extends Component {
     this.containerNode.removeEventListener(events.down, handlers.down);
     window.removeEventListener(events.move, handlers.move);
     window.removeEventListener(events.up, handlers.up);
+  }
+
+  updateParent() {
+    const { scale, translation } = this.state;
+    this.props.onChange({ scale, translation });
   }
 
   onMouseDown(e) {
@@ -173,7 +204,7 @@ class MapInteraction extends Component {
         y: translation.y + dragY
       },
       stopClickPropagation: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
-    });
+    }, () => this.updateParent());
   }
 
   onWheel(e) {
@@ -234,7 +265,7 @@ class MapInteraction extends Component {
 
   scaleFromPoint(newScale, focalPt) {
     const { translation, scale } = this.state;
-    const scaleRatio = newScale / scale;
+    const scaleRatio = newScale / (scale != 0 ? scale : 1);
 
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
@@ -246,7 +277,10 @@ class MapInteraction extends Component {
       y: translation.y - focalPtDelta.y
     };
 
-    this.setState({ scale: newScale, translation: newTranslation });
+    this.setState({
+      scale: newScale,
+      translation: newTranslation
+    }, () => this.updateParent());
   }
 
   scaleFromMultiTouch(e) {
@@ -282,7 +316,10 @@ class MapInteraction extends Component {
       y: this.startPointerInfo.translation.y - focalPtDelta.y + dragDelta.y
     };
 
-    this.setState({ scale: newScale, translation: newTranslation });
+    this.setState({
+      scale: newScale,
+      translation: newTranslation
+    }, () => this.updateParent());
   }
 
   discreteScaleStepSize() {

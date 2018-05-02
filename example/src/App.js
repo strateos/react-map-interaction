@@ -4,6 +4,14 @@ import React, { Component } from 'react';
 import { MapInteractionCSS } from 'react-map-interaction';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      scale: 1,
+      translation: { x: 0, y: 0 }
+    };
+  }
+
   render() {
     // set container node at an origin other than client 0,0 to make sure we handle this case
     const offset = 20;
@@ -16,9 +24,19 @@ class App extends Component {
       height: `calc(100vh - ${offset}px)`
     }
 
+    const { scale, translation } = this.state;
     return (
       <div style={style}>
-        <MapInteractionCSS minScale={.05} maxScale={5} showControls>
+        <MapInteractionCSS
+          scale={scale}
+          translation={translation}
+          onChange={({ scale, translation }) => this.setState({ scale, translation })}
+          defaultScale={1}
+          defaultTranslation={{ x: 0, y: 0 }}
+          minScale={0.05}
+          maxScale={5}
+          showControls
+        >
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 30, top: 30 }}>
               <button
