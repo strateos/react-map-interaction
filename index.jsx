@@ -149,6 +149,9 @@ class MapInteraction extends Component {
   }
 
   updateParent() {
+    if (!this.props.onChange) {
+      return;
+    }
     const { scale, translation } = this.state;
     this.props.onChange({ scale, translation });
   }
