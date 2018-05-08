@@ -66,7 +66,10 @@ class MapInteraction extends Component {
       showControls: PropTypes.bool,
       plusBtnContents: PropTypes.node,
       minusBtnContents: PropTypes.node,
-      btnClass: PropTypes.string
+      btnClass: PropTypes.string,
+      plusBtnClass: PropTypes.string,
+      minusBtnClass: PropTypes.string,
+      controlsClass: PropTypes.string
     };
   }
 
@@ -353,6 +356,9 @@ class MapInteraction extends Component {
         plusBtnContents={this.props.plusBtnContents}
         minusBtnContents={this.props.minusBtnContents}
         btnClass={this.props.btnClass}
+        plusBtnClass={this.props.plusBtnClass}
+        minusBtnClass={this.props.minusBtnClass}
+        controlsClass={this.props.controlsClass}
         scale={this.state.scale}
         minScale={this.props.minScale}
         maxScale={this.props.maxScale}
@@ -459,19 +465,23 @@ class Controls extends Component {
       plusBtnContents,
       minusBtnContents,
       btnClass,
+      plusBtnClass,
+      minusBtnClass,
+      controlsClass,
       scale,
       minScale,
       maxScale
     } = this.props;
 
     const btnStyle = btnClass ? undefined : { width: 30, paddingTop: 5, marginBottom: 5 };
+    const controlsStyle = controlsClass ? undefined : { position: 'absolute', right: 10, top: 10 };
 
     return (
-      <div style={{ position: 'absolute', right: 10, top: 10 }}>
+      <div style={controlsStyle} className={controlsClass}>
         <div>
           <button
             ref={(node) => { this.plusNode = node; }}
-            className={btnClass}
+            className={`${btnClass} ${plusBtnClass}`}
             style={btnStyle}
             disabled={scale >= maxScale}
           >
@@ -481,7 +491,7 @@ class Controls extends Component {
         <div>
           <button
             ref={(node) => { this.minusNode = node; }}
-            className={btnClass}
+            className={`${btnClass} ${minusBtnClass}`}
             style={btnStyle}
             disabled={scale <= minScale}
           >
@@ -499,6 +509,9 @@ Controls.propTypes = {
   plusBtnContents: PropTypes.node,
   minusBtnContents: PropTypes.node,
   btnClass: PropTypes.string,
+  plusBtnClass: PropTypes.string,
+  minusBtnClass: PropTypes.string,
+  controlsClass: PropTypes.string,
   scale: PropTypes.number,
   minScale: PropTypes.number,
   maxScale: PropTypes.number
