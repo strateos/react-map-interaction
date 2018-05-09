@@ -473,7 +473,7 @@ class Controls extends Component {
       maxScale
     } = this.props;
 
-    const btnStyle = btnClass ? undefined : { width: 30, paddingTop: 5, marginBottom: 5 };
+    const btnStyle = { width: 30, paddingTop: 5, marginBottom: 5 };
     const controlsStyle = controlsClass ? undefined : { position: 'absolute', right: 10, top: 10 };
 
     return (
@@ -481,8 +481,11 @@ class Controls extends Component {
         <div>
           <button
             ref={(node) => { this.plusNode = node; }}
-            className={`${btnClass} ${plusBtnClass}`}
-            style={btnStyle}
+            className={[
+              btnClass ? btnClass : '',
+              plusBtnClass ? plusBtnClass : '',
+            ].join(' ')}
+            style={(btnClass || plusBtnClass) ? undefined : btnStyle}
             disabled={scale >= maxScale}
           >
             {plusBtnContents}
@@ -491,8 +494,11 @@ class Controls extends Component {
         <div>
           <button
             ref={(node) => { this.minusNode = node; }}
-            className={`${btnClass} ${minusBtnClass}`}
-            style={btnStyle}
+            className={[
+              btnClass ? btnClass : '',
+              minusBtnClass ? minusBtnClass : '',
+            ].join(' ')}
+            style={(btnClass || minusBtnClass) ? undefined : btnStyle}
             disabled={scale <= minScale}
           >
             {minusBtnContents}

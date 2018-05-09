@@ -104,7 +104,7 @@ MapInteraction doesn't require any props. It will control its own internal state
   // Class applied to the plus/minus buttons (only when 'showControls' is 'true')
   btnClass: PropTypes.string,
 
-  // Classes applied to each button separately
+  // Classes applied to each button separately (only when 'showControls' is 'true')
   plusBtnClass: PropTypes.string,
   minusBtnClass: PropTypes.string,
 };
