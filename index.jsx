@@ -69,7 +69,9 @@ class MapInteraction extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      enableDrag: PropTypes.bool,
+      enableZoom: PropTypes.bool
     };
   }
 
@@ -77,7 +79,9 @@ class MapInteraction extends Component {
     return {
       minScale: 0.05,
       maxScale: 3,
-      showControls: false
+      showControls: false,
+      enableDrag: true,
+      enableZoom: true
     };
   }
 
@@ -199,6 +203,9 @@ class MapInteraction extends Component {
 
   // handles both touch and mouse drags
   onDrag(pointer) {
+    const {enableDrag} = this.props;
+    if (!enableDrag) return;
+
     const { translation, pointers } = this.startPointerInfo;
     const startPointer = pointers[0];
     const dragX = pointer.clientX - startPointer.clientX;
@@ -214,6 +221,9 @@ class MapInteraction extends Component {
   }
 
   onWheel(e) {
+    const {enableZoom} = this.props;
+    if (!enableZoom) return;
+
     e.preventDefault();
     e.stopPropagation();
 
