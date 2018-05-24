@@ -70,8 +70,8 @@ class MapInteraction extends Component {
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
       controlsClass: PropTypes.string,
-      enableDrag: PropTypes.bool,
-      enableZoom: PropTypes.bool
+      disableDrag: PropTypes.bool,
+      disableZoom: PropTypes.bool
     };
   }
 
@@ -80,8 +80,8 @@ class MapInteraction extends Component {
       minScale: 0.05,
       maxScale: 3,
       showControls: false,
-      enableDrag: true,
-      enableZoom: true
+      disableDrag: false,
+      disableZoom: false
     };
   }
 
@@ -203,8 +203,10 @@ class MapInteraction extends Component {
 
   // handles both touch and mouse drags
   onDrag(pointer) {
-    const {enableDrag} = this.props;
-    if (!enableDrag) return;
+    const {disableDrag} = this.props;
+    if (disableDrag) {
+      return;
+    }
 
     const { translation, pointers } = this.startPointerInfo;
     const startPointer = pointers[0];
@@ -221,8 +223,10 @@ class MapInteraction extends Component {
   }
 
   onWheel(e) {
-    const {enableZoom} = this.props;
-    if (!enableZoom) return;
+    const {disableZoom} = this.props;
+    if (disableZoom) {
+      return;
+    }
 
     e.preventDefault();
     e.stopPropagation();
@@ -300,6 +304,11 @@ class MapInteraction extends Component {
   }
 
   scaleFromMultiTouch(e) {
+    const {disableZoom} = this.props;
+    if (disableZoom) {
+      return;
+    }
+
     const startTouches = this.startPointerInfo.pointers;
     const newTouches   = e.touches;
 
