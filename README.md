@@ -83,6 +83,11 @@ MapInteraction doesn't require any props. It will control its own internal state
   translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
   defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
 
+  // Apply a limit to the translation in any direction in pixel values. The default is unbounded.
+  translationBounds: PropTypes.shape({
+    xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
+  }),
+
   // Called with an object { scale, translation }
   onChange: PropTypes.func,
 

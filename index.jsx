@@ -46,10 +46,12 @@ const coordChange = (coordinate, scaleRatio) => {
   return (scaleRatio * coordinate) - coordinate;
 };
 
+const translationShape = PropTypes.shape({ x: PropTypes.number, y: PropTypes.number });
+
 /*
   This contains logic for providing a map-like interaction to any DOM node.
   It allows a user to pinch, zoom, translate, etc, as they would an interactive map.
-  It renders its children with the current state of the translation and  does not do any  scaling
+  It renders its children with the current state of the translation and does not do any scaling
   or translating on its own. This works on both desktop, and mobile.
 */
 class MapInteraction extends Component {
@@ -57,10 +59,13 @@ class MapInteraction extends Component {
     return {
       children: PropTypes.func,
       scale: PropTypes.number,
-      translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+      translation: translationShape,
       defaultScale: PropTypes.number,
-      defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+      defaultTranslation: translationShape,
       onChange: PropTypes.func,
+      translationBounds: PropTypes.shape({
+        xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
+      }),
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
       showControls: PropTypes.bool,
@@ -77,7 +82,8 @@ class MapInteraction extends Component {
     return {
       minScale: 0.05,
       maxScale: 3,
-      showControls: false
+      showControls: false,
+      translationBounds: {}
     };
   }
 
@@ -138,7 +144,7 @@ class MapInteraction extends Component {
 
     this.setState({
       scale: clamp(newProps.minScale, scale, newProps.maxScale),
-      translation
+      translation: this.clampTranslation(translation, newProps)
     });
   }
 
@@ -203,12 +209,13 @@ class MapInteraction extends Component {
     const startPointer = pointers[0];
     const dragX = pointer.clientX - startPointer.clientX;
     const dragY = pointer.clientY - startPointer.clientY;
+    const newTranslation = {
+      x: translation.x + dragX,
+      y: translation.y + dragY
+    };
 
     this.setState({
-      translation: {
-        x: translation.x + dragX,
-        y: translation.y + dragY
-      },
+      translation: this.clampTranslation(newTranslation),
       stopClickPropagation: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
     }, () => this.updateParent());
   }
@@ -241,6 +248,20 @@ class MapInteraction extends Component {
       scale: this.state.scale,
       translation: this.state.translation,
     }
+  }
+
+  clampTranslation(desiredTranslation, props = this.props) {
+    const { x, y } = desiredTranslation;
+    let { xMax, xMin, yMax, yMin } = props.translationBounds;
+    xMin = xMin != undefined ? xMin : -Infinity,
+    yMin = yMin != undefined ? yMin : -Infinity,
+    xMax = xMax != undefined ? xMax : Infinity,
+    yMax = yMax != undefined ? yMax : Infinity
+
+    return {
+      x: clamp(xMin, x, xMax),
+      y: clamp(yMin, y, yMax)
+    };
   }
 
   translatedOrigin(translation = this.state.translation) {
@@ -285,7 +306,7 @@ class MapInteraction extends Component {
 
     this.setState({
       scale: newScale,
-      translation: newTranslation
+      translation: this.clampTranslation(newTranslation)
     }, () => this.updateParent());
   }
 
@@ -326,7 +347,7 @@ class MapInteraction extends Component {
 
     this.setState({
       scale: newScale,
-      translation: newTranslation
+      translation: this.clampTranslation(newTranslation)
     }, () => this.updateParent());
   }
 
@@ -370,7 +391,9 @@ class MapInteraction extends Component {
 
   render() {
     const { showControls, children } = this.props;
-    const { scale, translation } = this.state;
+    const { scale } = this.state;
+    // Defensively clamp the translation. This should not be necessary if we properly set state elsewhere.
+    const translation = this.clampTranslation(this.state.translation);
     const touchEndHandler = (e) => {
       if (this.state.stopClickPropagation) {
         e.stopPropagation();
