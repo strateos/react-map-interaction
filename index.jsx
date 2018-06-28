@@ -297,7 +297,9 @@ class MapInteraction extends Component {
     const dist0       = touchDistance(startTouches[0], startTouches[1]);
     const dist1       = touchDistance(newTouches[0], newTouches[1]);
     const scaleChange = dist1 / dist0;
-    const targetScale = this.startPointerInfo.scale + (scaleChange - 1);
+
+    const startScale  = this.startPointerInfo.scale;
+    const targetScale = startScale + ((scaleChange - 1) * startScale);
     const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
 
     // calculate mid points
@@ -309,7 +311,7 @@ class MapInteraction extends Component {
       y: newMidPoint.y - startMidpoint.y
     };
 
-    const scaleRatio = newScale / this.startPointerInfo.scale;
+    const scaleRatio = newScale / startScale;
 
     const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startPointerInfo.translation);
     const focalPtDelta = {
