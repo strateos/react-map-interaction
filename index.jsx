@@ -510,6 +510,7 @@ class Controls extends Component {
               btnClass ? btnClass : '',
               plusBtnClass ? plusBtnClass : '',
             ].join(' ')}
+            type="button"
             style={(btnClass || plusBtnClass) ? undefined : btnStyle}
             disabled={scale >= maxScale}
           >
@@ -523,6 +524,7 @@ class Controls extends Component {
               btnClass ? btnClass : '',
               minusBtnClass ? minusBtnClass : '',
             ].join(' ')}
+            type="button"
             style={(btnClass || minusBtnClass) ? undefined : btnStyle}
             disabled={scale <= minScale}
           >
