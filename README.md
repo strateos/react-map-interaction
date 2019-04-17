@@ -127,3 +127,6 @@ MapInteraction doesn't require any props. It will control its own internal state
   ...MapInteractionCSS.propTypes,
 }
 ```
+
+## Development
+Please feel free to file issues or put up a PR. There are currently no automated tests, but there is an example application in the `example` directory. When you build this library it will inject the dist into the `example/node_modules` so it can be imported by that application. Annoyingly, create-react-app doesn't watch the `node_modules` directory so you need to manually restart the example app with `npm start`.

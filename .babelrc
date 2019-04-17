@@ -1,8 +1,8 @@
 {
-  "only": "./index.jsx",
-  "plugins": ["transform-react-jsx"],
+  "only": ["src/**"],
   "presets": [
-    ["env", {
+    "@babel/preset-react",
+    ["@babel/preset-env", {
       "targets": {
         "browsers": ["ie >= 9"]
       }

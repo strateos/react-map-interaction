@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-// assumes that you have run `npm link react-map-interaction`
+// See ../copy-to-example.sh
 import { MapInteractionCSS } from 'react-map-interaction';
 
 class App extends Component {
