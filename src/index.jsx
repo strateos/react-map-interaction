@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import { clamp, distance, midpoint, touchPt, touchDistance } from './geometry';
+import makePassiveEventOption from './makePassiveEventOption';
 
 const isTouchDevice = () => {
   return (('ontouchstart' in window) ||
@@ -102,9 +103,12 @@ class MapInteraction extends Component {
     const events = eventNames();
     const handlers = this.handlers();
 
-    this.containerNode.addEventListener(events.down, handlers.down);
-    window.addEventListener(events.move, handlers.move);
-    window.addEventListener(events.up, handlers.up);
+    const passiveOption = makePassiveEventOption(false);
+
+    this.containerNode.addEventListener('wheel', this.onWheel, passiveOption);
+    this.containerNode.addEventListener(events.down, handlers.down, passiveOption);
+    window.addEventListener(events.move, handlers.move, passiveOption);
+    window.addEventListener(events.up, handlers.up, passiveOption);
   }
 
   componentWillReceiveProps(newProps) {
@@ -131,6 +135,7 @@ class MapInteraction extends Component {
     const handlers = this.handlers();
 
     this.containerNode.removeEventListener(events.down, handlers.down);
+    this.containerNode.removeEventListener('wheel');
     window.removeEventListener(events.move, handlers.move);
     window.removeEventListener(events.up, handlers.up);
   }
@@ -380,12 +385,14 @@ class MapInteraction extends Component {
     }
     return (
       <div
-        ref={(node) => { this.containerNode = node; }}
-        onWheel={this.onWheel}
+        ref={(node) => {
+          this.containerNode = node;
+        }}
         style={{
           height: '100%',
           width: '100%',
           position: 'relative', // for absolutely positioned children
+          touchAction: 'none'
         }}
         onClickCapture={touchEndHandler}
         onTouchEndCapture={touchEndHandler}
