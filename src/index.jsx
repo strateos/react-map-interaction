@@ -44,6 +44,8 @@ class MapInteraction extends Component {
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
       }),
+      disableZoom: PropTypes.bool,
+      disableTranslation: PropTypes.bool,
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
       showControls: PropTypes.bool,
@@ -61,7 +63,9 @@ class MapInteraction extends Component {
       minScale: 0.05,
       maxScale: 3,
       showControls: false,
-      translationBounds: {}
+      translationBounds: {},
+      disableZoom: false,
+      disableTranslation: false
     };
   }
 
@@ -161,7 +165,7 @@ class MapInteraction extends Component {
   }
 
   onMouseMove(e) {
-    if (!this.startPointerInfo) {
+    if (!this.startPointerInfo || this.props.disableTranslation) {
       return;
     }
     this.onDrag(e);
@@ -174,9 +178,16 @@ class MapInteraction extends Component {
       return;
     }
 
-    if (e.touches.length == 2 && this.startPointerInfo.pointers.length > 1) {
+    const { disableZoom, disableTranslation } = this.props;
+
+    const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+    if (isPinchAction && !disableZoom) {
       this.scaleFromMultiTouch(e);
-    } else if (e.touches.length === 1 && this.startPointerInfo) {
+      return;
+    }
+
+    const isDrag = (e.touches.length === 1) && this.startPointerInfo;
+    if (isDrag && !disableTranslation) {
       this.onDrag(e.touches[0]);
     }
   }
@@ -199,6 +210,10 @@ class MapInteraction extends Component {
   }
 
   onWheel(e) {
+    if (this.props.disableZoom) {
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -363,6 +378,7 @@ class MapInteraction extends Component {
         scale={this.state.scale}
         minScale={this.props.minScale}
         maxScale={this.props.maxScale}
+        disableZoom={this.props.disableZoom}
       />
     );
   }
@@ -399,7 +415,7 @@ class MapInteraction extends Component {
 
 /*
   This component provides a map like interaction to any content that you place in it. It will let
-  the user zoom and pan the children by scaling and translating props.children using css.
+  the user zoom and translate the children by scaling and translating props.children using css.
 */
 const MapInteractionCSS = (props) => {
   return (
@@ -473,7 +489,8 @@ class Controls extends Component {
       controlsClass,
       scale,
       minScale,
-      maxScale
+      maxScale,
+      disableZoom
     } = this.props;
 
     const btnStyle = { width: 30, paddingTop: 5, marginBottom: 5 };
@@ -490,7 +507,7 @@ class Controls extends Component {
             ].join(' ')}
             type="button"
             style={(btnClass || plusBtnClass) ? undefined : btnStyle}
-            disabled={scale >= maxScale}
+            disabled={disableZoom || (scale >= maxScale)}
           >
             {plusBtnContents}
           </button>
@@ -504,7 +521,7 @@ class Controls extends Component {
             ].join(' ')}
             type="button"
             style={(btnClass || minusBtnClass) ? undefined : btnStyle}
-            disabled={scale <= minScale}
+            disabled={disableZoom || (scale <= minScale)}
           >
             {minusBtnContents}
           </button>
@@ -525,12 +542,14 @@ Controls.propTypes = {
   controlsClass: PropTypes.string,
   scale: PropTypes.number,
   minScale: PropTypes.number,
-  maxScale: PropTypes.number
+  maxScale: PropTypes.number,
+  disableZoom: PropTypes.bool
 };
 
 Controls.defaultProps = {
   plusBtnContents: '+',
-  minusBtnContents: '-'
+  minusBtnContents: '-',
+  disableZoom: false
 };
 
 export { MapInteractionCSS, MapInteraction };
