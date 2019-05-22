@@ -5,8 +5,8 @@
   "main": "dist/react-map-interaction.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "rm -rf ./dist && mkdir ./dist && babel ./index.jsx -o dist/react-map-interaction.js",
-    "dist:watch": "babel ./index.jsx -o dist/react-map-interaction.js -w",
+    "dist": "webpack --config webpack.config.js --mode production",
+    "dist:dev": "npm run dist && ./copy-to-example.sh",
     "prepare": "npm run dist"
   },
   "keywords": [
@@ -25,12 +25,16 @@
     "prop-types": ">=15.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.0",
-    "babel-preset-react": "^6.24.1"
+    "@babel/core": "^7.3.3",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "webpack": "^4.29.5",
+    "webpack-cli": "^3.2.3"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/transcriptic/react-map-interaction"
-  }
+  },
+  "dependencies": {}
 }

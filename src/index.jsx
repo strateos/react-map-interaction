@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-const clamp = (min, value, max) => Math.max(min, Math.min(value, max));
+import { clamp, distance, midpoint, touchPt, touchDistance } from './geometry';
 
 const isTouchDevice = () => {
   return (('ontouchstart' in window) ||
@@ -19,29 +19,7 @@ const eventNames = () => {
   };
 }
 
-const distance = (p1, p2) => {
-  const dx = p1.x - p2.x;
-  const dy = p1.y - p2.y;
-  return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-}
-
-const midpoint = (p1, p2) => {
-  return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  };
-}
-
-const touchPt = (touch) => {
-  return { x: touch.clientX, y: touch.clientY };
-};
-
-const touchDistance = (t0, t1) => {
-  const p0 = touchPt(t0);
-  const p1 = touchPt(t1);
-  return distance(p0, p1);
-};
-
+// The amount that a value of a dimension will change given a new scale
 const coordChange = (coordinate, scaleRatio) => {
   return (scaleRatio * coordinate) - coordinate;
 };
@@ -253,10 +231,10 @@ class MapInteraction extends Component {
   clampTranslation(desiredTranslation, props = this.props) {
     const { x, y } = desiredTranslation;
     let { xMax, xMin, yMax, yMin } = props.translationBounds;
-    xMin = xMin != undefined ? xMin : -Infinity,
-    yMin = yMin != undefined ? yMin : -Infinity,
-    xMax = xMax != undefined ? xMax : Infinity,
-    yMax = yMax != undefined ? yMax : Infinity
+    xMin = xMin != undefined ? xMin : -Infinity;
+    yMin = yMin != undefined ? yMin : -Infinity;
+    xMax = xMax != undefined ? xMax : Infinity;
+    yMax = yMax != undefined ? yMax : Infinity;
 
     return {
       x: clamp(xMin, x, xMax),
