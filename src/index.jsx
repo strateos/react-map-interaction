@@ -4,22 +4,6 @@ import PropTypes from 'prop-types';
 import { clamp, distance, midpoint, touchPt, touchDistance } from './geometry';
 import makePassiveEventOption from './makePassiveEventOption';
 
-const isTouchDevice = () => {
-  return (('ontouchstart' in window) ||
-    (navigator.MaxTouchPoints > 0) ||
-    (navigator.msMaxTouchPoints > 0));
-}
-
-const eventNames = () => {
-  const isTouch = isTouchDevice();
-
-  return {
-    down: isTouch ? 'touchstart' : 'mousedown',
-    move: isTouch ? 'touchmove' : 'mousemove',
-    up:   isTouch ? 'touchend' : 'mouseup'
-  };
-}
-
 // The amount that a value of a dimension will change given a new scale
 const coordChange = (coordinate, scaleRatio) => {
   return (scaleRatio * coordinate) - coordinate;
@@ -100,15 +84,19 @@ class MapInteraction extends Component {
   }
 
   componentDidMount() {
-    const events = eventNames();
-    const handlers = this.handlers();
-
     const passiveOption = makePassiveEventOption(false);
 
     this.containerNode.addEventListener('wheel', this.onWheel, passiveOption);
-    this.containerNode.addEventListener(events.down, handlers.down, passiveOption);
-    window.addEventListener(events.move, handlers.move, passiveOption);
-    window.addEventListener(events.up, handlers.up, passiveOption);
+
+    // Add touch screen events
+    this.containerNode.addEventListener('touchstart', this.onTouchDown, passiveOption);
+    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
+    window.addEventListener('touchend', this.onTouchEnd, passiveOption);
+
+    // Add events for devices with mice
+    this.containerNode.addEventListener('mousedown', this.onMouseDown, passiveOption);
+    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    window.addEventListener('mouseup', this.onMouseUp, passiveOption);
   }
 
   componentWillReceiveProps(newProps) {
@@ -131,13 +119,17 @@ class MapInteraction extends Component {
   }
 
   componentWillUnmount() {
-    const events = eventNames();
-    const handlers = this.handlers();
-
-    this.containerNode.removeEventListener(events.down, handlers.down);
     this.containerNode.removeEventListener('wheel', this.onWheel);
-    window.removeEventListener(events.move, handlers.move);
-    window.removeEventListener(events.up, handlers.up);
+
+    // Remove touch events
+    this.containerNode.removeEventListener('touchstart', this.onTouchDown);
+    window.removeEventListener('touchmove', this.onTouchMove);
+    window.removeEventListener('touchend', this.onTouchEnd);
+
+    // Remove mouse events
+    this.containerNode.removeEventListener('mousedown', this.onMouseDown);
+    window.removeEventListener('mousemove', this.onMouseMove);
+    window.removeEventListener('mouseup', this.onMouseUp);
   }
 
   updateParent() {
@@ -148,7 +140,20 @@ class MapInteraction extends Component {
     this.props.onChange({ scale, translation });
   }
 
+  /*
+    Event handlers
+
+    All touch/mouse handlers preventDefault because we add
+    both touch and mouse handlers in the same session to support devicse
+    with both touch screen and mouse inputs. The browser may fire both
+    a touch and mouse event for a *single* user action, so we have to ensure
+    that only one handler is used by canceling the event in the first handler.
+
+    https://developer.mozilla.org/en-US/docs/Web/API/Touch_events/Supporting_both_TouchEvent_and_MouseEvent
+  */
+
   onMouseDown(e) {
+    e.preventDefault();
     this.setPointerState([e]);
   }
 
@@ -157,11 +162,13 @@ class MapInteraction extends Component {
     this.setPointerState(e.touches);
   }
 
-  onMouseUp() {
+  onMouseUp(e) {
+    e.preventDefault();
     this.setPointerState();
   }
 
   onTouchEnd(e) {
+    e.preventDefault();
     this.setPointerState(e.touches);
   }
 
@@ -169,6 +176,7 @@ class MapInteraction extends Component {
     if (!this.startPointerInfo) {
       return;
     }
+    e.preventDefault();
     this.onDrag(e);
   }
 
@@ -260,16 +268,6 @@ class MapInteraction extends Component {
     return {
       x: x - origin.x,
       y: y - origin.y
-    };
-  }
-
-  handlers() {
-    const isTouch = isTouchDevice();
-
-    return {
-      down: isTouch ? this.onTouchDown : this.onMouseDown,
-      move: isTouch ? this.onTouchMove : this.onMouseMove,
-      up:   isTouch ? this.onTouchEnd : this.onMouseUp
     };
   }
 
@@ -447,29 +445,6 @@ const MapInteractionCSS = (props) => {
 };
 
 class Controls extends Component {
-  componentDidMount() {
-    this.setPointerHandlers()
-  }
-
-  setPointerHandlers() {
-    const { onClickPlus, onClickMinus } = this.props;
-
-    const plusHandler = () => {
-      this.plusNode.blur();
-      onClickPlus();
-    };
-
-    const minusHandler = () => {
-      this.minusNode.blur();
-      onClickMinus();
-    };
-
-    const eventName = isTouchDevice() ? 'touchstart' : 'click';
-
-    this.plusNode.addEventListener(eventName, plusHandler);
-    this.minusNode.addEventListener(eventName, minusHandler);
-  }
-
   render() {
     const {
       plusBtnContents,
@@ -480,17 +455,33 @@ class Controls extends Component {
       controlsClass,
       scale,
       minScale,
-      maxScale
+      maxScale,
+      onClickPlus,
+      onClickMinus
     } = this.props;
 
     const btnStyle = { width: 30, paddingTop: 5, marginBottom: 5 };
     const controlsStyle = controlsClass ? undefined : { position: 'absolute', right: 10, top: 10 };
+
+    function plusHandler(e) {
+      e.preventDefault();
+      e.target.blur();
+      onClickPlus();
+    }
+
+    function minusHandler(e) {
+      e.preventDefault();
+      e.target.blur();
+      onClickMinus();
+    }
 
     return (
       <div style={controlsStyle} className={controlsClass}>
         <div>
           <button
             ref={(node) => { this.plusNode = node; }}
+            onClick={plusHandler}
+            onTouchEnd={plusHandler}
             className={[
               btnClass ? btnClass : '',
               plusBtnClass ? plusBtnClass : '',
@@ -505,6 +496,8 @@ class Controls extends Component {
         <div>
           <button
             ref={(node) => { this.minusNode = node; }}
+            onClick={minusHandler}
+            onTouchEnd={minusHandler}
             className={[
               btnClass ? btnClass : '',
               minusBtnClass ? minusBtnClass : '',
