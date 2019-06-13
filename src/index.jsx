@@ -135,7 +135,7 @@ class MapInteraction extends Component {
     const handlers = this.handlers();
 
     this.containerNode.removeEventListener(events.down, handlers.down);
-    this.containerNode.removeEventListener('wheel');
+    this.containerNode.removeEventListener('wheel', this.onWheel);
     window.removeEventListener(events.move, handlers.move);
     window.removeEventListener(events.up, handlers.up);
   }
