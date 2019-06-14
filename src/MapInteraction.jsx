@@ -27,6 +27,8 @@ class MapInteraction extends Component {
       translation: translationShape,
       defaultScale: PropTypes.number,
       defaultTranslation: translationShape,
+      disableZoom: PropTypes.bool,
+      disablePan: PropTypes.bool,
       onChange: PropTypes.func,
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
@@ -48,7 +50,9 @@ class MapInteraction extends Component {
       minScale: 0.05,
       maxScale: 3,
       showControls: false,
-      translationBounds: {}
+      translationBounds: {},
+      disableZoom: false,
+      disablePan: false
     };
   }
 
@@ -175,7 +179,7 @@ class MapInteraction extends Component {
   }
 
   onMouseMove(e) {
-    if (!this.startPointerInfo) {
+    if (!this.startPointerInfo || this.props.disablePan) {
       return;
     }
     e.preventDefault();
@@ -183,15 +187,18 @@ class MapInteraction extends Component {
   }
 
   onTouchMove(e) {
-    e.preventDefault();
-
     if (!this.startPointerInfo) {
       return;
     }
 
-    if (e.touches.length == 2 && this.startPointerInfo.pointers.length > 1) {
+    e.preventDefault();
+
+    const { disablePan, disableZoom } = this.props;
+
+    const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+    if (isPinchAction && !disableZoom) {
       this.scaleFromMultiTouch(e);
-    } else if (e.touches.length === 1 && this.startPointerInfo) {
+    } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
       this.onDrag(e.touches[0]);
     }
   }
@@ -214,6 +221,10 @@ class MapInteraction extends Component {
   }
 
   onWheel(e) {
+    if (this.props.disableZoom) {
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -368,6 +379,7 @@ class MapInteraction extends Component {
         scale={this.state.scale}
         minScale={this.props.minScale}
         maxScale={this.props.maxScale}
+        disableZoom={this.props.disableZoom}
       />
     );
   }
