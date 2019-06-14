@@ -1,7 +1,7 @@
 const path = require('path');
 
 const SRC_PATH = path.join(__dirname, 'src');
-const ENTRY_PATH = path.join(__dirname, 'src/index.jsx');
+const ENTRY_PATH = path.join(__dirname, 'src/index.js');
 const DEST_PATH = path.join(__dirname, 'dist');
 
 module.exports = {
@@ -21,6 +21,9 @@ module.exports = {
         use: 'babel-loader'
       }
     ]
+  },
+  resolve: {
+    extensions: [".js", ".jsx"]
   },
   externals: {
     react: {
