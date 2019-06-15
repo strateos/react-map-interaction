@@ -78,10 +78,17 @@ MapInteraction doesn't require any props. It will control its own internal state
   // contents appear at actual size, greater than 1 is zoomed, and between 0 and 1 is shrunken.
   scale: PropTypes.number,
   defaultScale: PropTypes.number,
+  // Stops user from being able to zoom, but will still adhere to props.scale
+  disableZoom: PropTypes.bool,
+
 
   // The distance in pixels to translate the contents by.
   translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
   defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+
+  // Stops user from being able to pan. Note that translation can still be
+  // changed via zooming, in order to keep the focal point beneath the cursor. This prop does not change the behavior of the `translation` prop.
+  disablePan: PropTypes.bool,
 
   // Apply a limit to the translation in any direction in pixel values. The default is unbounded.
   translationBounds: PropTypes.shape({
@@ -129,4 +136,4 @@ MapInteraction doesn't require any props. It will control its own internal state
 ```
 
 ## Development
-Please feel free to file issues or put up a PR. There are currently no automated tests, but there is an example application in the `example` directory. When you build this library it will inject the dist into the `example/node_modules` so it can be imported by that application. Annoyingly, create-react-app doesn't watch the `node_modules` directory so you need to manually restart the example app with `npm start`.
+Please feel free to file issues or put up a PR. There are currently no automated tests, but there is an example application in the `example` directory. When you build this library it will inject the dist into the `example/node_modules` so it can be imported by that application. Re-run `npm run start` when you make changes to the lib (create-react-app doesn't watch node modules).

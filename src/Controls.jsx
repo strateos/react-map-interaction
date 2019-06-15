@@ -14,7 +14,8 @@ class Controls extends Component {
       minScale,
       maxScale,
       onClickPlus,
-      onClickMinus
+      onClickMinus,
+      disableZoom
     } = this.props;
 
     const btnStyle = { width: 30, paddingTop: 5, marginBottom: 5 };
@@ -23,12 +24,14 @@ class Controls extends Component {
     function plusHandler(e) {
       e.preventDefault();
       e.target.blur();
+      if (disableZoom) return;
       onClickPlus();
     }
 
     function minusHandler(e) {
       e.preventDefault();
       e.target.blur();
+      if (disableZoom) return;
       onClickMinus();
     }
 
@@ -45,7 +48,7 @@ class Controls extends Component {
             ].join(' ')}
             type="button"
             style={(btnClass || plusBtnClass) ? undefined : btnStyle}
-            disabled={scale >= maxScale}
+            disabled={disableZoom || scale >= maxScale}
           >
             {plusBtnContents}
           </button>
@@ -61,7 +64,7 @@ class Controls extends Component {
             ].join(' ')}
             type="button"
             style={(btnClass || minusBtnClass) ? undefined : btnStyle}
-            disabled={scale <= minScale}
+            disabled={disableZoom || scale <= minScale}
           >
             {minusBtnContents}
           </button>
@@ -82,12 +85,14 @@ Controls.propTypes = {
   controlsClass: PropTypes.string,
   scale: PropTypes.number,
   minScale: PropTypes.number,
-  maxScale: PropTypes.number
+  maxScale: PropTypes.number,
+  disableZoom: PropTypes.bool
 };
 
 Controls.defaultProps = {
   plusBtnContents: '+',
-  minusBtnContents: '-'
+  minusBtnContents: '-',
+  disableZoom: false
 };
 
 export default Controls;
