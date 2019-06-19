@@ -41,7 +41,8 @@ class MapInteraction extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      containerAsEventTarget: PropTypes.bool
     };
   }
 
@@ -52,7 +53,8 @@ class MapInteraction extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
+      containerAsEventTarget: false
     };
   }
 
@@ -93,16 +95,16 @@ class MapInteraction extends Component {
     const passiveOption = makePassiveEventOption(false);
 
     this.containerNode.addEventListener('wheel', this.onWheel, passiveOption);
-
+    const target = this.props.containerAsEventTarget ? this.containerNode : window;
     // Add touch screen events
     this.containerNode.addEventListener('touchstart', this.onTouchDown, passiveOption);
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('touchend', this.onTouchEnd, passiveOption);
+    target.addEventListener('touchmove', this.onTouchMove, passiveOption);
+    target.addEventListener('touchend', this.onTouchEnd, passiveOption);
 
     // Add events for devices with mice
     this.containerNode.addEventListener('mousedown', this.onMouseDown, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
-    window.addEventListener('mouseup', this.onMouseUp, passiveOption);
+    target.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    target.addEventListener('mouseup', this.onMouseUp, passiveOption);
   }
 
   componentWillReceiveProps(newProps) {
@@ -127,15 +129,16 @@ class MapInteraction extends Component {
   componentWillUnmount() {
     this.containerNode.removeEventListener('wheel', this.onWheel);
 
+    const target = this.props.containerAsEventTarget ? this.containerNode : window;
     // Remove touch events
     this.containerNode.removeEventListener('touchstart', this.onTouchDown);
-    window.removeEventListener('touchmove', this.onTouchMove);
-    window.removeEventListener('touchend', this.onTouchEnd);
+    target.removeEventListener('touchmove', this.onTouchMove);
+    target.removeEventListener('touchend', this.onTouchEnd);
 
     // Remove mouse events
     this.containerNode.removeEventListener('mousedown', this.onMouseDown);
-    window.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
+    target.removeEventListener('mousemove', this.onMouseMove);
+    target.removeEventListener('mouseup', this.onMouseUp);
   }
 
   updateParent() {
