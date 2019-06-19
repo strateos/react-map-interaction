@@ -119,6 +119,9 @@ MapInteraction doesn't require any props. It will control its own internal state
   // Classes applied to each button separately (only when 'showControls' is 'true')
   plusBtnClass: PropTypes.string,
   minusBtnClass: PropTypes.string,
+  
+  // Sets whether to apply event listeners on the global window object or the container node within the component. Default is false.
+  containerAsEventTarget: PropTypes.bool,
 };
 ```
 
