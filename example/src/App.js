@@ -20,8 +20,9 @@ class App extends Component {
       position: 'absolute',
       top: offset,
       left: offset,
-      width: `calc(100vw - ${offset}px)`,
-      height: `calc(100vh - ${offset}px)`
+      width: `calc(80vw - ${offset}px)`,
+      height: `calc(50vh - ${offset}px)`,
+      border: '1px solid blue'
     }
 
     const { scale, translation } = this.state;

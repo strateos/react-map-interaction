@@ -72,7 +72,7 @@ class MapInteraction extends Component {
     this.state = {
       scale: clamp(minScale, desiredScale, maxScale),
       translation: translation || defaultTranslation || { x: 0, y: 0 },
-      stopClickPropagation: false
+      disallowChildClicks: false
     };
 
     this.startPointerInfo = undefined;
@@ -94,15 +94,31 @@ class MapInteraction extends Component {
 
     this.containerNode.addEventListener('wheel', this.onWheel, passiveOption);
 
-    // Add touch screen events
-    this.containerNode.addEventListener('touchstart', this.onTouchDown, passiveOption);
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('touchend', this.onTouchEnd, passiveOption);
+    /*
+      Setup events for the gesture lifecycle: start, move, end touch
+    */
 
-    // Add events for devices with mice
+    // start gesture
+    this.containerNode.addEventListener('touchstart', this.onTouchDown, passiveOption);
     this.containerNode.addEventListener('mousedown', this.onMouseDown, passiveOption);
+
+    // move gesture
+    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
     window.addEventListener('mousemove', this.onMouseMove, passiveOption);
-    window.addEventListener('mouseup', this.onMouseUp, passiveOption);
+
+    /*
+      end gesture
+
+      These events that signify an end to a drag (touchend, mouseup)
+      are attached to the window for two reasons. 1) the UX requires it, and 2)
+      we use stop propagation on these events in `handleTouchOrClickCapture`. We
+      want the event handlers here to not be short circuited by that stop prop, so
+      we attach at the window level and use `capture` to ensure they get called first.
+    */
+    const touchAndMouseEndOptions = { capture: true, ...passiveOption };
+    window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
+    window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
+
   }
 
   componentWillReceiveProps(newProps) {
@@ -216,7 +232,7 @@ class MapInteraction extends Component {
 
     this.setState({
       translation: this.clampTranslation(newTranslation),
-      stopClickPropagation: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
+      disallowChildClicks: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
     }, () => this.updateParent());
   }
 
@@ -242,7 +258,7 @@ class MapInteraction extends Component {
   }
 
   setPointerState(pointers) {
-    if (!pointers) {
+    if (!pointers || pointers.length === 0) {
       this.startPointerInfo = undefined;
       return;
     }
@@ -389,12 +405,17 @@ class MapInteraction extends Component {
     const { scale } = this.state;
     // Defensively clamp the translation. This should not be necessary if we properly set state elsewhere.
     const translation = this.clampTranslation(this.state.translation);
-    const touchEndHandler = (e) => {
-      if (this.state.stopClickPropagation) {
+
+    // If we are in the middle of a drag then stop click/touch
+    // events from propagating down. We do this so content inside
+    // of the map is not clickable or touchable during a drag.
+    const handleTouchOrClickCapture = (e) => {
+      if (this.state.disallowChildClicks) {
         e.stopPropagation();
-        this.setState({ stopClickPropagation: false });
+        this.setState({ disallowChildClicks: false });
       }
     }
+
     return (
       <div
         ref={(node) => {
@@ -406,8 +427,8 @@ class MapInteraction extends Component {
           position: 'relative', // for absolutely positioned children
           touchAction: 'none'
         }}
-        onClickCapture={touchEndHandler}
-        onTouchEndCapture={touchEndHandler}
+        onClickCapture={handleTouchOrClickCapture}
+        onTouchEndCapture={handleTouchOrClickCapture}
       >
         {(children || undefined) && children({ translation, scale })}
         {(showControls || undefined) && this.renderControls()}
