@@ -32,11 +32,13 @@ import { MapInteraction } from 'react-map-interaction';
 
 // Use MapInteraction if you want to determine how to use the resulting translation.
 const NotUsingCSS = () => {
-  <MapInteraction>
-    {
-      ({ translation, scale }) => { /* Use the passed values to scale content on your own. */ }
-    }
-  </MapInteraction>
+  return (
+    <MapInteraction>
+      {
+        ({ translation, scale }) => { /* Use the passed values to scale content on your own. */ }
+      }
+    </MapInteraction>
+  );
 }
 ```
 
