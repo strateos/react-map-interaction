@@ -1,5 +1,4 @@
 {
-  "only": ["src/**"],
   "presets": [
     "@babel/preset-react",
     ["@babel/preset-env", {

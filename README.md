@@ -11,6 +11,8 @@ npm install --save react-map-interaction
 
 ## Examples
 
+We use [storybook](https://storybook.js.org/) in development, and you can pull this repo and run storybook with `npm run storybook`. See files with `*.stories.*` for examples.
+
 ### Basic
 ```js
 import { MapInteractionCSS } from 'react-map-interaction';
@@ -71,6 +73,9 @@ class Controlled extends Component {
   }
 }
 ```
+
+### Click and drag handlers on child elements
+This component lets you decide how to respond to click/drag events on the children that you render inside of the map. To know if an element was clicked or dragged, you can attach onClick or onTouchEnd events and then check the `e.defaultPrevneted` attribute. MapInteraction will set `defaultPrevented` to `true` if the touchend/mouseup event happened after a drag, and false if it was a click. See `index.stories.js` for an example.
 
 ## Prop Types for MapInteractionCSS (all optional)
 MapInteraction doesn't require any props. It will control its own internal state, and pass values to its children. If you need to control the scale and translation then you can pass those values as props and listen to the onChange event to receive updates.
