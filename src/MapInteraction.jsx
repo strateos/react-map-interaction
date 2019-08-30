@@ -72,13 +72,13 @@ class MapInteraction extends Component {
     this.state = {
       scale: clamp(minScale, desiredScale, maxScale),
       translation: translation || defaultTranslation || { x: 0, y: 0 },
-      disallowChildClicks: false
+      shouldPreventTouchEndDefault: false
     };
 
     this.startPointerInfo = undefined;
 
     this.onMouseDown = this.onMouseDown.bind(this);
-    this.onTouchDown = this.onTouchDown.bind(this);
+    this.onTouchStart = this.onTouchStart.bind(this);
 
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onTouchMove = this.onTouchMove.bind(this);
@@ -99,22 +99,14 @@ class MapInteraction extends Component {
     */
 
     // start gesture
-    this.containerNode.addEventListener('touchstart', this.onTouchDown, passiveOption);
+    this.containerNode.addEventListener('touchstart', this.onTouchStart, passiveOption);
     this.containerNode.addEventListener('mousedown', this.onMouseDown, passiveOption);
 
     // move gesture
     window.addEventListener('touchmove', this.onTouchMove, passiveOption);
     window.addEventListener('mousemove', this.onMouseMove, passiveOption);
 
-    /*
-      end gesture
-
-      These events that signify an end to a drag (touchend, mouseup)
-      are attached to the window for two reasons. 1) the UX requires it, and 2)
-      we use stop propagation on these events in `handleTouchOrClickCapture`. We
-      want the event handlers here to not be short circuited by that stop prop, so
-      we attach at the window level and use `capture` to ensure they get called first.
-    */
+    // end gesture
     const touchAndMouseEndOptions = { capture: true, ...passiveOption };
     window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
     window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
@@ -144,7 +136,7 @@ class MapInteraction extends Component {
     this.containerNode.removeEventListener('wheel', this.onWheel);
 
     // Remove touch events
-    this.containerNode.removeEventListener('touchstart', this.onTouchDown);
+    this.containerNode.removeEventListener('touchstart', this.onTouchStart);
     window.removeEventListener('touchmove', this.onTouchMove);
     window.removeEventListener('touchend', this.onTouchEnd);
 
@@ -179,18 +171,16 @@ class MapInteraction extends Component {
     this.setPointerState([e]);
   }
 
-  onTouchDown(e) {
+  onTouchStart(e) {
     e.preventDefault();
     this.setPointerState(e.touches);
   }
 
   onMouseUp(e) {
-    e.preventDefault();
     this.setPointerState();
   }
 
   onTouchEnd(e) {
-    e.preventDefault();
     this.setPointerState(e.touches);
   }
 
@@ -232,7 +222,7 @@ class MapInteraction extends Component {
 
     this.setState({
       translation: this.clampTranslation(newTranslation),
-      disallowChildClicks: Boolean(Math.abs(dragX) + Math.abs(dragY) > 2)
+      shouldPreventTouchEndDefault: true
     }, () => this.updateParent());
   }
 
@@ -406,13 +396,19 @@ class MapInteraction extends Component {
     // Defensively clamp the translation. This should not be necessary if we properly set state elsewhere.
     const translation = this.clampTranslation(this.state.translation);
 
-    // If we are in the middle of a drag then stop click/touch
-    // events from propagating down. We do this so content inside
-    // of the map is not clickable or touchable during a drag.
-    const handleTouchOrClickCapture = (e) => {
-      if (this.state.disallowChildClicks) {
-        e.stopPropagation();
-        this.setState({ disallowChildClicks: false });
+    /*
+      This is a little trick to allow the following ux: We want the parent of this
+      component to decide if elements inside the map are clickable. Normally, you wouldn't
+      want to trigger a click event when the user *drags* on an element (only if they click
+      and then release w/o dragging at all). However we don't want to assume this
+      behavior here, so we call `preventDefault` and then let the parent check
+      `e.defaultPrevented`. That value being true means that we are signalling that
+      a drag event ended, not a click. 
+    */
+    const handleEventCapture = (e) => {
+      if (this.state.shouldPreventTouchEndDefault) {
+        e.preventDefault();
+        this.setState({ shouldPreventTouchEndDefault: false });
       }
     }
 
@@ -427,8 +423,8 @@ class MapInteraction extends Component {
           position: 'relative', // for absolutely positioned children
           touchAction: 'none'
         }}
-        onClickCapture={handleTouchOrClickCapture}
-        onTouchEndCapture={handleTouchOrClickCapture}
+        onClickCapture={handleEventCapture}
+        onTouchEndCapture={handleEventCapture}
       >
         {(children || undefined) && children({ translation, scale })}
         {(showControls || undefined) && this.renderControls()}

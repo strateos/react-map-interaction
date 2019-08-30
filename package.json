@@ -7,7 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dist": "webpack --config webpack.config.js --mode production",
     "dist:dev": "npm run dist && ./copy-to-example.sh",
-    "prepare": "npm run dist"
+    "prepare": "npm run dist",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "keywords": [
     "react",
@@ -28,6 +30,10 @@
     "@babel/core": "^7.3.3",
     "@babel/preset-env": "^7.3.1",
     "@babel/preset-react": "^7.0.0",
+    "@storybook/addon-actions": "^5.1.11",
+    "@storybook/addon-links": "^5.1.11",
+    "@storybook/addons": "^5.1.11",
+    "@storybook/react": "^5.1.11",
     "babel-loader": "^8.0.5",
     "webpack": "^4.29.5",
     "webpack-cli": "^3.2.3"
