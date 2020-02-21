@@ -256,7 +256,7 @@ class MapInteraction extends Component {
     this.startPointerInfo = {
       pointers,
       scale: this.state.scale,
-      translation: this.state.translation,
+      translation: this.state.translation
     }
   }
 
@@ -347,7 +347,8 @@ class MapInteraction extends Component {
 
     this.setState({
       scale: newScale,
-      translation: this.clampTranslation(newTranslation)
+      translation: this.clampTranslation(newTranslation),
+      shouldPreventTouchEndDefault: true
     }, () => this.updateParent());
   }
 
@@ -408,7 +409,10 @@ class MapInteraction extends Component {
     const handleEventCapture = (e) => {
       if (this.state.shouldPreventTouchEndDefault) {
         e.preventDefault();
-        this.setState({ shouldPreventTouchEndDefault: false });
+        
+        if (this.startPointerInfo === undefined) {
+          this.setState({ shouldPreventTouchEndDefault: false });
+        }
       }
     }
 
