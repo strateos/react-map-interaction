@@ -92,15 +92,15 @@ class MapInteraction extends Component {
   componentDidMount() {
     const passiveOption = makePassiveEventOption(false);
 
-    this.containerNode.addEventListener('wheel', this.onWheel, passiveOption);
+    this.getContainerNode().addEventListener('wheel', this.onWheel, passiveOption);
 
     /*
       Setup events for the gesture lifecycle: start, move, end touch
     */
 
     // start gesture
-    this.containerNode.addEventListener('touchstart', this.onTouchStart, passiveOption);
-    this.containerNode.addEventListener('mousedown', this.onMouseDown, passiveOption);
+    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
+    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
 
     // move gesture
     window.addEventListener('touchmove', this.onTouchMove, passiveOption);
@@ -133,15 +133,15 @@ class MapInteraction extends Component {
   }
 
   componentWillUnmount() {
-    this.containerNode.removeEventListener('wheel', this.onWheel);
+    this.getContainerNode().removeEventListener('wheel', this.onWheel);
 
     // Remove touch events
-    this.containerNode.removeEventListener('touchstart', this.onTouchStart);
+    this.getContainerNode().removeEventListener('touchstart', this.onTouchStart);
     window.removeEventListener('touchmove', this.onTouchMove);
     window.removeEventListener('touchend', this.onTouchEnd);
 
     // Remove mouse events
-    this.containerNode.removeEventListener('mousedown', this.onMouseDown);
+    this.getContainerNode().removeEventListener('mousedown', this.onMouseDown);
     window.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('mouseup', this.onMouseUp);
   }
@@ -275,7 +275,7 @@ class MapInteraction extends Component {
   }
 
   translatedOrigin(translation = this.state.translation) {
-    const clientOffset = this.containerNode.getBoundingClientRect();
+    const clientOffset = this.getContainerNode().getBoundingClientRect();
     return {
       x: clientOffset.left + translation.x,
       y: clientOffset.top + translation.y
@@ -362,13 +362,16 @@ class MapInteraction extends Component {
     const { minScale, maxScale } = this.props;
     const scale = clamp(minScale, targetScale, maxScale);
 
-    const rect = this.containerNode.getBoundingClientRect();
+    const rect = this.getContainerNode().getBoundingClientRect();
     const x = rect.left + (rect.width / 2);
     const y = rect.top + (rect.height / 2);
 
     const focalPoint = this.clientPosToTranslatedPos({ x, y });
     this.scaleFromPoint(scale, focalPoint);
   }
+
+  // Done like this so it is mockable
+  getContainerNode() { return this.containerNode }
 
   renderControls() {
     const step = this.discreteScaleStepSize();
@@ -403,7 +406,7 @@ class MapInteraction extends Component {
       and then release w/o dragging at all). However we don't want to assume this
       behavior here, so we call `preventDefault` and then let the parent check
       `e.defaultPrevented`. That value being true means that we are signalling that
-      a drag event ended, not a click. 
+      a drag event ended, not a click.
     */
     const handleEventCapture = (e) => {
       if (this.state.shouldPreventTouchEndDefault) {

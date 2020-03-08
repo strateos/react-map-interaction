@@ -1,10 +1,17 @@
 # Unreleased
 
-# 1.3.1
+## 1.3.3
+- New test runner
 
-### Fix issue of contents changing translation when dragging outside of container.
+# Released
+
+## 1.3.2
+- Adds storybook
+
+## 1.3.1
+- Fix \#34
+- Fix \#20
+- Fix issue of contents changing translation when dragging outside of container.
 This bug can be reproduced by a) Perform a normal drag inside of the container, then b) Drag somewhere outside of the container, which should have no impact on the translation of the contents, however you will see that the contents will change translation.
-
-### Fix #20.
 
 # Versions 1.3.0 and earlier do not yet have entries in the changelog.
