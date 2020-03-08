@@ -1,0 +1,5 @@
+{
+  "require": ["@babel/register", "./mochaTestSetup.js"],
+  "spec": "./src/*.test.*",
+  "watch-files": ["./src/*"]
+}
