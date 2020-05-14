@@ -220,9 +220,11 @@ class MapInteraction extends Component {
       y: translation.y + dragY
     };
 
+    const shouldPreventTouchEndDefault = Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
+
     this.setState({
       translation: this.clampTranslation(newTranslation),
-      shouldPreventTouchEndDefault: true
+      shouldPreventTouchEndDefault
     }, () => this.updateParent());
   }
 
