@@ -5,24 +5,9 @@ import sinon from 'sinon';
 const jsdom =  require('jsdom-global');
 
 import MapInteraction from './MapInteraction';
+import { mockContainerRef } from './TestUtil.js';
 
 describe("MapInteraction", () => {
-  // mock the containerNode ref since it wont get set in a shallow render
-  // this is required if your test needs to simulate dom events
-  const mockContainerRef = () => {
-    return sinon.stub(MapInteraction.prototype, 'getContainerNode')
-      .callsFake(() => {
-        // _TODO_ new Element() possible?
-        return {
-          addEventListener: function() {},
-          removeEventListener: function() {},
-          getBoundingClientRect: function() {
-            return { left: 0, width: 200, top: 0, height: 200 };
-          }
-        }
-      });
-  };
-
   let cleanupDom;
   beforeEach(() => {
     cleanupDom = jsdom();
