@@ -277,13 +277,15 @@ class MapInteraction extends Component {
   }
 
   translatedOrigin(translation = this.state.translation) {
-    const clientOffset = this.getContainerNode().getBoundingClientRect();
+    const clientOffset = this.getContainerBoundingClientRect();
     return {
       x: clientOffset.left + translation.x,
       y: clientOffset.top + translation.y
     };
   }
 
+  // From a given screen point return it as a point
+  // in the coordinate system of the given translation
   clientPosToTranslatedPos({ x, y }, translation = this.state.translation) {
     const origin = this.translatedOrigin(translation);
     return {
@@ -312,6 +314,10 @@ class MapInteraction extends Component {
     }, () => this.updateParent());
   }
 
+  // Given the start touches and new e.touches, scale and translate
+  // such that the initial midpoint remains as the new midpoint. This is
+  // to achieve the effect of keeping the content that was directly
+  // in the middle of the two fingers as the focal point throughout the zoom.
   scaleFromMultiTouch(e) {
     const startTouches = this.startPointerInfo.pointers;
     const newTouches   = e.touches;
@@ -326,9 +332,11 @@ class MapInteraction extends Component {
     const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
 
     // calculate mid points
-    const newMidPoint   = midpoint(touchPt(newTouches[0]), touchPt(newTouches[1]));
     const startMidpoint = midpoint(touchPt(startTouches[0]), touchPt(startTouches[1]))
+    const newMidPoint   = midpoint(touchPt(newTouches[0]), touchPt(newTouches[1]));
 
+    // The amount we need to translate by in order for
+    // the mid point to stay in the middle (before thinking about scaling factor)
     const dragDelta = {
       x: newMidPoint.x - startMidpoint.x,
       y: newMidPoint.y - startMidpoint.y
@@ -336,12 +344,18 @@ class MapInteraction extends Component {
 
     const scaleRatio = newScale / startScale;
 
+    // The point originally in the middle of the fingers on the initial zoom start
     const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startPointerInfo.translation);
+
+    // The amount that middle point has changed from this scaling
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
       y: coordChange(focalPt.y, scaleRatio)
     };
 
+    // Translation is the original translation, plus the amount we dragged,
+    // minus what the scaling will do to the focal point. Subtracting the
+    // scaling factor keeps the midpoint in the middle of the touch points.
     const newTranslation = {
       x: this.startPointerInfo.translation.x - focalPtDelta.x + dragDelta.x,
       y: this.startPointerInfo.translation.y - focalPtDelta.y + dragDelta.y
@@ -359,12 +373,13 @@ class MapInteraction extends Component {
     return delta / 10;
   }
 
+  // Scale using the center of the content as a focal point
   changeScale(delta) {
     const targetScale = this.state.scale + delta;
     const { minScale, maxScale } = this.props;
     const scale = clamp(minScale, targetScale, maxScale);
 
-    const rect = this.getContainerNode().getBoundingClientRect();
+    const rect = this.getContainerBoundingClientRect();
     const x = rect.left + (rect.width / 2);
     const y = rect.top + (rect.height / 2);
 
@@ -374,6 +389,9 @@ class MapInteraction extends Component {
 
   // Done like this so it is mockable
   getContainerNode() { return this.containerNode }
+  getContainerBoundingClientRect() {
+    return this.getContainerNode().getBoundingClientRect();
+  }
 
   renderControls() {
     const step = this.discreteScaleStepSize();

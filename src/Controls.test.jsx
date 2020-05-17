@@ -74,8 +74,8 @@ describe("Controls", () => {
       plusBtn.simulate('click');
       minusBtn.simulate('click');
       minusBtn.simulate('click');
-      expect(minusCallback.callCount).to.equal(2);
       expect(plusCallback.callCount).to.equal(1);
+      expect(minusCallback.callCount).to.equal(2);
     });
   });
 });
