@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { Component } from 'react';
 import { mount, shallow } from 'enzyme';
 import { expect } from 'chai';
 import sinon from 'sinon';
 const jsdom =  require('jsdom-global');
 
-import MapInteraction from './MapInteraction';
+import MapInteraction, { MapInteractionControlled } from './MapInteraction';
 import { mockContainerRef } from './TestUtil.js';
 
 describe("MapInteraction", () => {
@@ -40,7 +40,7 @@ describe("MapInteraction", () => {
   it("full mount - uses default props", () => {
     const childrenCallback = sinon.fake();
     wrapper = mount(
-      <MapInteraction defaultTranslation={{ x: 100, y: 105 }} defaultScale={3}>
+      <MapInteraction translation={{ x: 100, y: 105 }} scale={3} onChange={() => {}}>
         {childrenCallback}
       </MapInteraction>
     );
@@ -49,32 +49,84 @@ describe("MapInteraction", () => {
     expect(scale).to.equal(3);
   });
 
-  it("scales from point with children callback", () => {
+  it("scales from point when fully controlled", () => {
     refStub = mockContainerRef();
     const changeCb = sinon.fake();
-    wrapper = shallow(
+    wrapper = mount(
       <MapInteraction
-        defaultTranslation={{ x: 100, y: 105 }}
-        defaultScale={3}
+        translation={{ x: 100, y: 105 }}
+        scale={3}
         onChange={changeCb}
       />
     );
-    wrapper.instance().changeScale(-1);
+    const instance = wrapper.find(MapInteractionControlled).instance();
+    instance.changeScale(-1);
     const argsList = changeCb.args;
     expect(argsList.length).to.equal(1);
     expect(argsList[0][0].scale).to.equal(2);
   });
 
-  it("scale from point state change", () => {
+  it("scale from point state change when uncontrolled", () => {
     refStub = mockContainerRef();
-    wrapper = shallow(
+    wrapper = mount(
       <MapInteraction
         defaultTranslation={{ x: 100, y: 105 }}
         defaultScale={3}
       />
     );
     expect(wrapper.state().scale).to.equal(3);
-    wrapper.instance().changeScale(-1);
+    const instance = wrapper.find(MapInteractionControlled).instance();
+    instance.changeScale(-1);
     expect(wrapper.state().scale).to.equal(2);
+  });
+
+  it("fully controlled with changeScale called", () => {
+    class Controller extends Component {
+      constructor(props) {
+        super(props);
+        this.state = { scale: 1, translation: { x: 0, y: 0 }};
+      }
+
+      render() {
+        return (
+          <MapInteraction
+            translation={this.state.translation}
+            scale={this.state.scale}
+            onChange={(params) => {
+              const promise = new Promise((resolve) => {
+                this.setState(params, () => resolve());
+              });
+              this.props.onSetState(promise);
+            }}
+          />
+        );
+      }
+    }
+
+    let setStatePromise;
+
+    refStub = mockContainerRef();
+    wrapper = mount(<Controller onSetState={(p) => { setStatePromise = p }} />);
+    const controller = wrapper.find(Controller);
+    const rmi = wrapper.find(MapInteraction);
+    const rmiInner = rmi.find(MapInteractionControlled);
+
+    // initial state
+    expect(controller.state().scale).to.equal(1);
+    expect(rmi.props().scale).to.equal(1);
+    expect(rmiInner.props().scale).to.equal(1);
+
+    rmiInner.instance().changeScale(1);
+
+    return setStatePromise.then(() => {
+      wrapper.update();
+      const controller = wrapper.find(Controller);
+      const rmi = wrapper.find(MapInteraction);
+      const rmiInner = rmi.find(MapInteractionControlled);
+
+      expect(controller.state().scale).to.equal(2);
+      expect(rmi.props().scale).to.equal(2);
+      expect(rmiInner.props().scale).to.equal(2);
+    })
   });
 });
