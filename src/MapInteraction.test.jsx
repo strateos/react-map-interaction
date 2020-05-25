@@ -94,7 +94,7 @@ describe("MapInteraction", () => {
             scale={this.state.scale}
             onChange={(params) => {
               const promise = new Promise((resolve) => {
-                this.setState(params, () => resolve());
+                this.setState(params, resolve);
               });
               this.props.onSetState(promise);
             }}
@@ -128,5 +128,46 @@ describe("MapInteraction", () => {
       expect(rmi.props().scale).to.equal(2);
       expect(rmiInner.props().scale).to.equal(2);
     })
+  });
+
+  // This is an unhappy path. The caller of RMI should not switch from
+  // controlled to uncontrolled.
+  it("parent switches from controlled to uncontrolled", () => {
+    class Controller extends Component {
+      constructor(props) {
+        super(props);
+        this.state = { scale: 1, translation: { x: 0, y: 0 }};
+      }
+
+      render() {
+        return (
+          <MapInteraction
+            translation={this.state.translation}
+            scale={this.state.scale}
+            onChange={(params) => {
+              const promise = new Promise((resolve) => {
+                this.setState(params, resolve);
+              });
+              this.props.onSetState(promise);
+            }}
+          />
+        );
+      }
+    }
+
+    let setStatePromise;
+
+    refStub = mockContainerRef();
+    wrapper = mount(<Controller onSetState={(p) => { setStatePromise = p }} />);
+    const controller = wrapper.find(Controller);
+    const rmi = wrapper.find(MapInteraction);
+    const rmiInner = rmi.find(MapInteractionControlled);
+
+    // initial state
+    expect(controller.state().scale).to.equal(1);
+    expect(rmi.props().scale).to.equal(1);
+    expect(rmiInner.props().scale).to.equal(1);
+
+    controller.instance().setState({ scale: undefined });
   });
 });
