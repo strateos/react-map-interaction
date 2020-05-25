@@ -127,11 +127,14 @@ describe("MapInteraction", () => {
       expect(controller.state().scale).to.equal(2);
       expect(rmi.props().scale).to.equal(2);
       expect(rmiInner.props().scale).to.equal(2);
-    })
+    });
   });
 
   // This is an unhappy path. The caller of RMI should not switch from
-  // controlled to uncontrolled.
+  // controlled to uncontrolled. We just want to make sure we dont blow up.
+  // The caller should be able to switch from controlled-uncontrolled-controlled
+  // and have the component work back in a fully controlled state, but
+  // it wont work while in the intermediary uncontrolled state.
   it("parent switches from controlled to uncontrolled", () => {
     class Controller extends Component {
       constructor(props) {
@@ -168,6 +171,21 @@ describe("MapInteraction", () => {
     expect(rmi.props().scale).to.equal(1);
     expect(rmiInner.props().scale).to.equal(1);
 
+    // switched to uncontrolled then back again
     controller.instance().setState({ scale: undefined });
+    controller.instance().setState({ scale: 2 });
+
+    rmiInner.instance().changeScale(1);
+
+    return setStatePromise.then(() => {
+      wrapper.update();
+      const controller = wrapper.find(Controller);
+      const rmi = wrapper.find(MapInteraction);
+      const rmiInner = rmi.find(MapInteractionControlled);
+
+      expect(controller.state().scale).to.equal(3);
+      expect(rmi.props().scale).to.equal(3);
+      expect(rmiInner.props().scale).to.equal(3);
+    });
   });
 });
