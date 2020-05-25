@@ -54,7 +54,6 @@ export class MapInteractionControlled extends Component {
     };
   }
 
-
   constructor(props) {
     super(props);
 
@@ -422,10 +421,6 @@ export class MapInteractionControlled extends Component {
   Main entry point component.
   Determines if parent is controlling us (eg it manages state) or leaving us uncontrolled
   (eg we manage our own internal state)
-
-  This does not support (gracefully) switching between controlled and uncontrolled
-  as the native <input /> is able to. Callers must pick to either instantiate as
-  controlled or uncontrolled and stick with that for the lifecycle of the component.
 */
 class MapInteractionController extends Component {
   static get propTypes() {
@@ -437,7 +432,7 @@ class MapInteractionController extends Component {
       defaultTranslation: translationShape,
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
-      onChange: PropTypes.func, // This is a controlled component
+      onChange: PropTypes.func,
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
       }),
@@ -453,25 +448,63 @@ class MapInteractionController extends Component {
     };
   }
 
-  isControlled() {
-    // Similar to the <input /> API, setting values declares that you want to control this component
-    return this.props.scale != undefined || this.props.translation != undefined;
-  }
-
   constructor(props) {
     super(props);
 
-    const controlled = this.isControlled();
+    const controlled = MapInteractionController.isControlled(props);
     if (controlled) {
-      this.state = {};
+      this.state = {
+        lastProps: { scale: props.scale, translation: props.translation }
+      };
     } else {
-      // Set necessary state for controlling map interaction ourselves
+      // Set the necessary state for controlling map interaction ourselves
       this.state = {
         scale: this.props.defaultScale || 1,
-        translation: this.props.defaultTranslation || { x: 0, y: 0 }
+        translation: this.props.defaultTranslation || { x: 0, y: 0 },
+        lastProps: undefined
       };
     }
   }
+
+  /*
+    Handle the parent switchg form controlled to uncontrolled or vice versa.
+    This is at most a best-effort attempt. It is not gauranteed by our API
+    but it will do its best to maintain the state such that if the parent
+    accidentally switches between controlled/uncontrolled there won't be
+    any jankiness or jumpiness.
+
+    This tries to mimick how the React <input /> component behaves.
+  */
+  static getDerivedStateFromProps(props, state) {
+    const nowControlled = MapInteractionController.isControlled(props);
+    const wasControlled = state.lastProps && MapInteractionController.isControlled(state.lastProps)
+
+    /*
+      State transitions:
+        uncontrolled --> controlled   (unset internal state, set last props from parent)
+        controlled   --> uncontrolled (set internal state to last props from parent)
+        controlled   --> controlled   (update last props from parent)
+        uncontrolled --> uncontrolled (do nothing)
+
+      Note that the second two (no change in control) will also happen on the
+      initial render because we set lastProps in the constructor.
+    */
+    if (!wasControlled && nowControlled) {
+      return { scale: undefined, translation: undefined, lastProps: props };
+    } else if (wasControlled && !nowControlled) {
+      return { scale: state.lastProps.scale, translation: state.lastProps.translation, lastProps: undefined };
+    } else if (wasControlled && nowControlled) {
+      return { lastProps: props };
+    } else if (!wasControlled && !nowControlled) {
+      return null;
+    }
+  }
+
+  static isControlled(props) {
+    // Similar to the <input /> API, setting values declares that you want to control this component
+    return props.scale != undefined || props.translation != undefined;
+  }
+
 
   innerProps() {
     const { defaultScale, scale, defaultTranslation, translation, onChange,
@@ -481,13 +514,15 @@ class MapInteractionController extends Component {
 
   render() {
     const { onChange, children } = this.props;
-    const controlled = this.isControlled();
+    const controlled = MapInteractionController.isControlled(this.props);
     const scale = controlled ?  this.props.scale : this.state.scale;
     const translation = controlled ? this.props.translation : this.state.translation;
 
     return (
       <MapInteractionControlled
-        onChange={params => controlled ? onChange(params) : this.setState(params)}
+        onChange={(value) => {
+          controlled ? onChange(value) : this.setState(value);
+        }}
 
         scale={scale}
         translation={translation}
@@ -500,5 +535,4 @@ class MapInteractionController extends Component {
   }
 }
 
-// _TODO naming? Probably should export MapInteraction name by default
 export default MapInteractionController;
