@@ -90,8 +90,6 @@ storiesOf('MapInteractionCSS', module)
         <MapInteractionCSS>
           <button
             onClick={(e) => {
-              console.log('inside on click')
-              console.log("e.defaultPrevented: ", e.defaultPrevented);
               if (e.defaultPrevented) {
                 action('Drag!')();
               } else {
@@ -99,8 +97,6 @@ storiesOf('MapInteractionCSS', module)
               }
             }}
             onTouchEnd={(e) => {
-              console.log('inside on click')
-              console.log("e.defaultPrevented: ", e.defaultPrevented);
               if (e.defaultPrevented) {
                 action('Drag!')();
               } else {
