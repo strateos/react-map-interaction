@@ -7,7 +7,6 @@ import {MapInteractionControlled} from './MapInteraction';
 function mockContainerRef() {
   return sinon.stub(MapInteractionControlled.prototype, 'getContainerNode')
     .callsFake(() => {
-      // _TODO_ new Element() possible?
       return {
         addEventListener: function() {},
         removeEventListener: function() {},

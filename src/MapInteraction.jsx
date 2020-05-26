@@ -22,12 +22,18 @@ const translationShape = PropTypes.shape({ x: PropTypes.number, y: PropTypes.num
 export class MapInteractionControlled extends Component {
   static get propTypes() {
     return {
+      // The content that will be transformed
       children: PropTypes.func,
-      scale: PropTypes.number.isRequired,
-      translation: translationShape.isRequired,
+
+      // This is a controlled component
+      value: PropTypes.shape({
+        scale: PropTypes.number.isRequired,
+        translation: translationShape.isRequired,
+      }).isRequired,
+      onChange: PropTypes.func.isRequired,
+
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
-      onChange: PropTypes.func.isRequired, // This is a controlled component
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
       }),
@@ -185,6 +191,7 @@ export class MapInteractionControlled extends Component {
       shouldPreventTouchEndDefault
     }, () => {
       this.props.onChange({
+        scale: this.props.value.scale,
         translation: this.clampTranslation(newTranslation)
       });
     });
@@ -202,7 +209,7 @@ export class MapInteractionControlled extends Component {
 
     const newScale = clamp(
       this.props.minScale,
-      this.props.scale + (1 - scaleChange),
+      this.props.value.scale + (1 - scaleChange),
       this.props.maxScale
     );
 
@@ -219,8 +226,8 @@ export class MapInteractionControlled extends Component {
 
     this.startPointerInfo = {
       pointers,
-      scale: this.props.scale,
-      translation: this.props.translation,
+      scale: this.props.value.scale,
+      translation: this.props.value.translation,
     }
   }
 
@@ -238,7 +245,7 @@ export class MapInteractionControlled extends Component {
     };
   }
 
-  translatedOrigin(translation = this.props.translation) {
+  translatedOrigin(translation = this.props.value.translation) {
     const clientOffset = this.getContainerBoundingClientRect();
     return {
       x: clientOffset.left + translation.x,
@@ -248,7 +255,7 @@ export class MapInteractionControlled extends Component {
 
   // From a given screen point return it as a point
   // in the coordinate system of the given translation
-  clientPosToTranslatedPos({ x, y }, translation = this.props.translation) {
+  clientPosToTranslatedPos({ x, y }, translation = this.props.value.translation) {
     const origin = this.translatedOrigin(translation);
     return {
       x: x - origin.x,
@@ -257,7 +264,7 @@ export class MapInteractionControlled extends Component {
   }
 
   scaleFromPoint(newScale, focalPt) {
-    const { translation, scale } = this.props;
+    const { translation, scale } = this.props.value;
     const scaleRatio = newScale / (scale != 0 ? scale : 1);
 
     const focalPtDelta = {
@@ -308,7 +315,7 @@ export class MapInteractionControlled extends Component {
     // The point originally in the middle of the fingers on the initial zoom start
     const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startPointerInfo.translation);
 
-    // The amount that middle point has changed from this scaling
+    // The amount that the middle point has changed from this scaling
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
       y: coordChange(focalPt.y, scaleRatio)
@@ -336,7 +343,7 @@ export class MapInteractionControlled extends Component {
 
   // Scale using the center of the content as a focal point
   changeScale(delta) {
-    const targetScale = this.props.scale + delta;
+    const targetScale = this.props.value.scale + delta;
     const { minScale, maxScale } = this.props;
     const scale = clamp(minScale, targetScale, maxScale);
 
@@ -366,7 +373,7 @@ export class MapInteractionControlled extends Component {
         plusBtnClass={this.props.plusBtnClass}
         minusBtnClass={this.props.minusBtnClass}
         controlsClass={this.props.controlsClass}
-        scale={this.props.scale}
+        scale={this.props.value.scale}
         minScale={this.props.minScale}
         maxScale={this.props.maxScale}
         disableZoom={this.props.disableZoom}
@@ -376,9 +383,9 @@ export class MapInteractionControlled extends Component {
 
   render() {
     const { showControls, children } = this.props;
-    const { scale } = this.props;
+    const scale = this.props.value.scale;
     // Defensively clamp the translation. This should not be necessary if we properly set state elsewhere.
-    const translation = this.clampTranslation(this.props.translation);
+    const translation = this.clampTranslation(this.props.value.translation);
 
     /*
       This is a little trick to allow the following ux: We want the parent of this
@@ -419,17 +426,21 @@ export class MapInteractionControlled extends Component {
 
 /*
   Main entry point component.
-  Determines if parent is controlling us (eg it manages state) or leaving us uncontrolled
+  Determines if it's parent is controlling (eg it manages state) or leaving us uncontrolled
   (eg we manage our own internal state)
 */
 class MapInteractionController extends Component {
   static get propTypes() {
     return {
       children: PropTypes.func,
-      scale: PropTypes.number,
-      translation: translationShape,
-      defaultScale: PropTypes.number,
-      defaultTranslation: translationShape,
+      value: PropTypes.shape({
+        scale: PropTypes.number.isRequired,
+        translation: translationShape.isRequired,
+      }),
+      defaultValue: PropTypes.shape({
+        scale: PropTypes.number.isRequired,
+        translation: translationShape.isRequired,
+      }),
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
       onChange: PropTypes.func,
@@ -454,14 +465,16 @@ class MapInteractionController extends Component {
     const controlled = MapInteractionController.isControlled(props);
     if (controlled) {
       this.state = {
-        lastProps: { scale: props.scale, translation: props.translation }
+        lastKnownValueFromProps: props.value
       };
     } else {
       // Set the necessary state for controlling map interaction ourselves
       this.state = {
-        scale: this.props.defaultScale || 1,
-        translation: this.props.defaultTranslation || { x: 0, y: 0 },
-        lastProps: undefined
+        value: props.defaultValue || {
+          scale: 1,
+          translation: { x: 0, y: 0 }
+        },
+        lastKnownValueFromProps: undefined
       };
     }
   }
@@ -477,7 +490,7 @@ class MapInteractionController extends Component {
   */
   static getDerivedStateFromProps(props, state) {
     const nowControlled = MapInteractionController.isControlled(props);
-    const wasControlled = state.lastProps && MapInteractionController.isControlled(state.lastProps)
+    const wasControlled = state.lastKnownValueFromProps && MapInteractionController.isControlled({ value: state.lastKnownValueFromProps })
 
     /*
       State transitions:
@@ -487,46 +500,51 @@ class MapInteractionController extends Component {
         uncontrolled --> uncontrolled (do nothing)
 
       Note that the second two (no change in control) will also happen on the
-      initial render because we set lastProps in the constructor.
+      initial render because we set lastKnownValueFromProps in the constructor.
     */
     if (!wasControlled && nowControlled) {
-      return { scale: undefined, translation: undefined, lastProps: props };
+      return {
+        value: {
+          scale: undefined,
+          translation: undefined
+        },
+        lastKnownValueFromProps: props.value
+      };
     } else if (wasControlled && !nowControlled) {
-      return { scale: state.lastProps.scale, translation: state.lastProps.translation, lastProps: undefined };
+      return {
+        value: state.lastKnownValueFromProps,
+        lastKnownValueFromProps: undefined
+      };
     } else if (wasControlled && nowControlled) {
-      return { lastProps: props };
+      return { lastKnownValueFromProps: props.value };
     } else if (!wasControlled && !nowControlled) {
       return null;
     }
   }
 
   static isControlled(props) {
-    // Similar to the <input /> API, setting values declares that you want to control this component
-    return props.scale != undefined || props.translation != undefined;
+    // Similar to React's <input /> API, setting a value declares
+    // that you want to control this component.
+    return props.value != undefined;
   }
 
-
+  // The subset of this component's props that need to be passed
+  // down to the core RMI component
   innerProps() {
-    const { defaultScale, scale, defaultTranslation, translation, onChange,
-      ...innerProps } = this.props;
+    const { value, defaultValue, onChange, ...innerProps } = this.props;
     return innerProps;
   }
 
   render() {
     const { onChange, children } = this.props;
     const controlled = MapInteractionController.isControlled(this.props);
-    const scale = controlled ?  this.props.scale : this.state.scale;
-    const translation = controlled ? this.props.translation : this.state.translation;
-
+    const value = controlled ? this.props.value : this.state.value;
     return (
       <MapInteractionControlled
         onChange={(value) => {
-          controlled ? onChange(value) : this.setState(value);
+          controlled ? onChange(value) : this.setState({ value });
         }}
-
-        scale={scale}
-        translation={translation}
-
+        value={value}
         {...this.innerProps()}
       >
        {children}

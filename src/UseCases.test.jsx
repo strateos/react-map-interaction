@@ -90,7 +90,9 @@ function makeWheelEvent(deltaY = 1) {
 // Note that it creates an uncontrolled instance
 function makeDefaultWrapper(scale = 1, translation = { x: 0, y: 0 }) {
   const wrapper = mount(
-    <MapInteractionCSS defaultScale={scale} defaultTranslation={translation}>
+    <MapInteractionCSS
+      defaultValue={{ scale, translation }}
+    >
       <div className="child">hello</div>
     </MapInteractionCSS>
   );

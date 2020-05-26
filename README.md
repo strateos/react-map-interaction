@@ -9,9 +9,7 @@ Add map like zooming and panning to any React element. This works on both touch 
 npm install --save react-map-interaction
 ```
 
-## Examples
-
-We use [storybook](https://storybook.js.org/) in development, and you can pull this repo and run storybook with `npm run storybook`. See files with `*.stories.*` for examples.
+## Usage
 
 ### Basic
 ```js
@@ -54,8 +52,10 @@ class Controlled extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      scale: 1,
-      translation: { x: 0, y: 0 }
+      value: {
+        scale: 1,
+        translation: { x: 0, y: 0 }
+      }
     };
   }
 
@@ -63,9 +63,8 @@ class Controlled extends Component {
     const { scale, translation } = this.state;
     return (
       <MapInteractionCSS
-        scale={scale}
-        translation={translation}
-        onChange={({ scale, translation }) => this.setState({ scale, translation })}
+        value={this.state.value}
+        onChange={(value) => this.setState({ value })}
       >
         <img src="path/to/thing.png" />
       </MapInteractionCSS>
@@ -74,6 +73,13 @@ class Controlled extends Component {
 }
 ```
 
+### Controlled vs Uncontrolled
+Similar to React's `<input />` component, you can either control the state of MapInteraction
+yourself, or let it handle that for you. It is not recommended, however, that you change
+this mode of control during the lifecycle of a component. Once you have started controlling
+the state, keep controlling it under you unmount MapInteraction (likewise with uncontrolled).
+If you pass `value` prop, we assume you are controlling the state via a `onChange` prop.
+
 ### Click and drag handlers on child elements
 This component lets you decide how to respond to click/drag events on the children that you render inside of the map. To know if an element was clicked or dragged, you can attach onClick or onTouchEnd events and then check the `e.defaultPrevented` attribute. MapInteraction will set `defaultPrevented` to `true` if the touchend/mouseup event happened after a drag, and false if it was a click. See `index.stories.js` for an example.
 
@@ -81,17 +87,21 @@ This component lets you decide how to respond to click/drag events on the childr
 MapInteraction doesn't require any props. It will control its own internal state, and pass values to its children. If you need to control the scale and translation then you can pass those values as props and listen to the onChange event to receive updates.
 ```js
 {
-  // The scale applied to the dimensions of the contents. A scale of 1 means the
-  // contents appear at actual size, greater than 1 is zoomed, and between 0 and 1 is shrunken.
-  scale: PropTypes.number,
-  defaultScale: PropTypes.number,
+  value: PropTypes.shape({
+    // The scale applied to the dimensions of the contents. A scale of 1 means the
+    // contents appear at actual size, greater than 1 is zoomed, and between 0 and 1 is shrunken.
+    scale: PropTypes.number,
+    // The distance in pixels to translate the contents by.
+    translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),    
+  }),
+
+  defaultValue: PropTypes.shape({
+    scale: PropTypes.number,
+    translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
+  }),
+
   // Stops user from being able to zoom, but will still adhere to props.scale
   disableZoom: PropTypes.bool,
-
-
-  // The distance in pixels to translate the contents by.
-  translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
-  defaultTranslation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
 
   // Stops user from being able to pan. Note that translation can still be
   // changed via zooming, in order to keep the focal point beneath the cursor. This prop does not change the behavior of the `translation` prop.
@@ -143,4 +153,16 @@ MapInteraction doesn't require any props. It will control its own internal state
 ```
 
 ## Development
-Please feel free to file issues or put up a PR. There are currently no automated tests, but there is an example application in the `example` directory. When you build this library it will inject the dist into the `example/node_modules` so it can be imported by that application. Re-run `npm run start` when you make changes to the lib (create-react-app doesn't watch node modules).
+Please feel free to file issues or put up a PR.
+
+```
+$ yarn install
+```
+
+```
+$ yarn test
+```
+
+```
+$ yarn run storybook
+```

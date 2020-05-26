@@ -21,17 +21,20 @@ storiesOf('MapInteractionCSS', module)
     class Controller extends Component {
       constructor(props) {
         super(props);
-        this.state = { scale: 1, translation: { x: 0, y: 0 }};
+        this.state = {
+          value: {
+            scale: 1, translation: { x: 0, y: 0 }
+          }
+        };
       }
 
       render() {
         return (
           <div style={{ width: 500, height: 500, border: BLUE_BORDER }}>
             <MapInteractionCSS
-              translation={this.state.translation}
-              scale={this.state.scale}
-              onChange={(params) => {
-                this.setState(params);
+              value={this.state.value}
+              onChange={(value) => {
+                this.setState({ value });
               }}
               showControls
             >
@@ -49,8 +52,10 @@ storiesOf('MapInteractionCSS', module)
       constructor(props) {
         super(props);
         this.state = {
-          scale: 1,
-          translation: { x: 0, y: 0 },
+          value: {
+            scale: 1,
+            translation: { x: 0, y: 0 }
+          },
           controlled: true
         };
       }
@@ -61,9 +66,8 @@ storiesOf('MapInteractionCSS', module)
         return (
           <div style={{ width: 500, height: 500, border: BLUE_BORDER }}>
             <MapInteractionCSS
-              translation={controlled ? translation : undefined}
-              scale={controlled ? scale : undefined}
-              onChange={controlled ? (s) => this.setState(s) : undefined}
+              value={controlled ? this.state.value : undefined}
+              onChange={controlled ? (value) => this.setState({ value }) : undefined}
               showControls
             >
               <img src={gridImg} style={{ pointerEvents: 'none' }} alt="" />
