@@ -504,10 +504,7 @@ class MapInteractionController extends Component {
     */
     if (!wasControlled && nowControlled) {
       return {
-        value: {
-          scale: undefined,
-          translation: undefined
-        },
+        value: undefined,
         lastKnownValueFromProps: props.value
       };
     } else if (wasControlled && !nowControlled) {
@@ -533,6 +530,11 @@ class MapInteractionController extends Component {
   innerProps() {
     const { value, defaultValue, onChange, ...innerProps } = this.props;
     return innerProps;
+  }
+
+  getValue() {
+    const controlled = MapInteractionController.isControlled(this.props);
+    return controlled ? this.props.value : this.state.value;
   }
 
   render() {
