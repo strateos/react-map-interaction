@@ -154,6 +154,7 @@ MapInteraction doesn't require any props. It will control its own internal state
 
 ## Development
 Please feel free to file issues or put up a PR.
+Note the node version in .nvmrc file.
 
 ```
 $ yarn install
