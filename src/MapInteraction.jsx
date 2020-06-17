@@ -132,14 +132,14 @@ export class MapInteractionControlled extends Component {
   */
 
   onMouseDown(e) {
-    if (!this.props.isHovering) {
+    if (!this.props.textIsHovered) {
       e.preventDefault();
       this.setPointerState([e]);
     }
   }
 
   onTouchStart(e) {
-    if (!this.props.isHovering) {
+    if (!this.props.textIsHovered) {
       e.preventDefault();
       this.setPointerState(e.touches);
     }
@@ -157,7 +157,7 @@ export class MapInteractionControlled extends Component {
     if (!this.startPointerInfo || this.props.disablePan) {
       return;
     }
-    if (!this.props.isHovering) {
+    if (!this.props.textIsHovered) {
       e.preventDefault();
       this.onDrag(e);
     }
@@ -168,7 +168,7 @@ export class MapInteractionControlled extends Component {
       return;
     }
 
-    if (!this.props.isHovering) {
+    if (!this.props.textIsHovered) {
       e.preventDefault();
       const { disablePan, disableZoom } = this.props;
 
