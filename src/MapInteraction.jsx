@@ -132,13 +132,17 @@ export class MapInteractionControlled extends Component {
   */
 
   onMouseDown(e) {
-    e.preventDefault();
-    this.setPointerState([e]);
+    if (!this.props.isHovering) {
+      e.preventDefault();
+      this.setPointerState([e]);
+    }
   }
 
   onTouchStart(e) {
-    e.preventDefault();
-    this.setPointerState(e.touches);
+    if (!this.props.isHovering) {
+      e.preventDefault();
+      this.setPointerState(e.touches);
+    }
   }
 
   onMouseUp(e) {
@@ -153,8 +157,10 @@ export class MapInteractionControlled extends Component {
     if (!this.startPointerInfo || this.props.disablePan) {
       return;
     }
-    e.preventDefault();
-    this.onDrag(e);
+    if (!this.props.isHovering) {
+      e.preventDefault();
+      this.onDrag(e);
+    }
   }
 
   onTouchMove(e) {
@@ -162,15 +168,16 @@ export class MapInteractionControlled extends Component {
       return;
     }
 
-    e.preventDefault();
+    if (!this.props.isHovering) {
+      e.preventDefault();
+      const { disablePan, disableZoom } = this.props;
 
-    const { disablePan, disableZoom } = this.props;
-
-    const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
-    if (isPinchAction && !disableZoom) {
-      this.scaleFromMultiTouch(e);
-    } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
-      this.onDrag(e.touches[0]);
+      const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+      if (isPinchAction && !disableZoom) {
+        this.scaleFromMultiTouch(e);
+      } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
+        this.onDrag(e.touches[0]);
+      }
     }
   }
 
