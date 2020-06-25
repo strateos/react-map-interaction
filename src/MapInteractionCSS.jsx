@@ -12,20 +12,26 @@ const MapInteractionCSS = (props) => {
         ({ translation, scale }) => {
           // Translate first and then scale.  Otherwise, the scale would affect the translation.
           const transform = `translate(${translation.x}px, ${translation.y}px) scale(${scale})`;
+          let wrapperStyle = {
+            height: '100%',
+            width: '100%',
+            position: 'relative', // for absolutely positioned children
+            overflow: 'hidden',
+          };
+          if (!this.props.textIsHovered) {
+            wrapperStyle = {
+              ...wrapperStyle,
+              touchAction: 'none', // Not supported in Safari :(
+              msTouchAction: 'none',
+              cursor: 'all-scroll',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none'
+            };
+          }
           return (
             <div
-              style={{
-                height: '100%',
-                width: '100%',
-                position: 'relative', // for absolutely positioned children
-                overflow: 'hidden',
-                touchAction: 'none', // Not supported in Safari :(
-                msTouchAction: 'none',
-                cursor: 'all-scroll',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none'
-              }}
+              style={wrapperStyle}
             >
               <div
                 style={{
