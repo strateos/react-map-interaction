@@ -90,19 +90,20 @@ export class MapInteractionControlled extends Component {
       Setup events for the gesture lifecycle: start, move, end touch
     */
 
-    // start gesture
-    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
-    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
+    if (!this.props.textIsHovered) {
+      // start gesture
+      this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
+      this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
 
-    // move gesture
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+      // move gesture
+      window.addEventListener('touchmove', this.onTouchMove, passiveOption);
+      window.addEventListener('mousemove', this.onMouseMove, passiveOption);
 
-    // end gesture
-    const touchAndMouseEndOptions = { capture: true, ...passiveOption };
-    window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
-    window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
-
+      // end gesture
+      const touchAndMouseEndOptions = { capture: true, ...passiveOption };
+      window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
+      window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
+    }
   }
 
   componentWillUnmount() {
@@ -132,17 +133,13 @@ export class MapInteractionControlled extends Component {
   */
 
   onMouseDown(e) {
-    if (!this.props.textIsHovered) {
-      e.preventDefault();
-      this.setPointerState([e]);
-    }
+    e.preventDefault();
+    this.setPointerState([e]);
   }
 
   onTouchStart(e) {
-    if (!this.props.textIsHovered) {
-      e.preventDefault();
-      this.setPointerState(e.touches);
-    }
+    e.preventDefault();
+    this.setPointerState(e.touches);
   }
 
   onMouseUp(e) {
@@ -157,10 +154,8 @@ export class MapInteractionControlled extends Component {
     if (!this.startPointerInfo || this.props.disablePan) {
       return;
     }
-    if (!this.props.textIsHovered) {
-      e.preventDefault();
-      this.onDrag(e);
-    }
+    e.preventDefault();
+    this.onDrag(e);
   }
 
   onTouchMove(e) {
@@ -168,16 +163,14 @@ export class MapInteractionControlled extends Component {
       return;
     }
 
-    if (!this.props.textIsHovered) {
-      e.preventDefault();
-      const { disablePan, disableZoom } = this.props;
+    e.preventDefault();
+    const { disablePan, disableZoom } = this.props;
 
-      const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
-      if (isPinchAction && !disableZoom) {
-        this.scaleFromMultiTouch(e);
-      } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
-        this.onDrag(e.touches[0]);
-      }
+    const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+    if (isPinchAction && !disableZoom) {
+      this.scaleFromMultiTouch(e);
+    } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
+      this.onDrag(e.touches[0]);
     }
   }
 
