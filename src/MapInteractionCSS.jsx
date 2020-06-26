@@ -18,7 +18,7 @@ const MapInteractionCSS = (props) => {
             position: 'relative', // for absolutely positioned children
             overflow: 'hidden',
           };
-          if (!this.props.textIsHovered) {
+          if (!props.textIsHovered) {
             wrapperStyle = {
               ...wrapperStyle,
               touchAction: 'none', // Not supported in Safari :(
