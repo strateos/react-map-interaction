@@ -145,15 +145,11 @@ export class MapInteractionControlled extends Component {
   }
 
   onMouseUp(e) {
-    if (!this.props.textIsHovered) {
-      this.setPointerState();
-    }
+    this.setPointerState();
   }
 
   onTouchEnd(e) {
-    if (!this.props.textIsHovered) {
-      this.setPointerState(e.touches);
-    }
+    this.setPointerState(e.touches);
   }
 
   onMouseMove(e) {
