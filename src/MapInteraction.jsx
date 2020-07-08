@@ -126,7 +126,6 @@ export class MapInteractionControlled extends Component {
     );
     window.addEventListener("mouseup", this.onMouseUp, touchAndMouseEndOptions);
     window.addEventListener("gesturemove", function (e) {
-      console.log("moving");
     });
   }
 
@@ -147,7 +146,6 @@ export class MapInteractionControlled extends Component {
     window.removeEventListener("mouseup", this.onMouseUp);
     window.addEventListener("wheel", (e) => {
       e.preventDefault();
-      console.log(e.deltaX);
     });
   }
 
@@ -259,8 +257,6 @@ export class MapInteractionControlled extends Component {
       });
 
       this.scaleFromPoint(newScale, mousePos);
-      console.log(mousePos); // mouse position in coordinate system
-      console.log(newScale); // image scale calculated again
     } else {
       const translation = this.props.value.translation;
 
@@ -362,7 +358,6 @@ export class MapInteractionControlled extends Component {
   // to achieve the effect of keeping the content that was directly
   // in the middle of the two fingers as the focal point throughout the zoom.
   scaleFromMultiTouch(e) {
-    console.log(e.deltaX);
     /*
     const startTouches = this.startPointerInfo.pointers;
     const newTouches = e.touches;
