@@ -34,6 +34,8 @@ export class MapInteractionControlled extends Component {
 
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
+      disableInertialPanning: PropTypes.bool,
+      frictionCoef: PropTypes.number,
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
       }),
@@ -56,7 +58,9 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
+      disableInertialPanning: false,
+      frictionCoef: 0.85
     };
   }
 
@@ -69,6 +73,21 @@ export class MapInteractionControlled extends Component {
 
     this.startPointerInfo = undefined;
 
+    this.prevDragThrottled = false;
+    this.prevDragPos = {
+      time: undefined,
+      pos: {
+        x: 0,
+        y: 0
+      }
+    };
+    this.dragVelocity = {
+      x: 0,
+      y: 0,
+    }
+    this.inertialPanningLastRaf = undefined;
+    this.inertialPanningRafID = undefined;
+
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onTouchStart = this.onTouchStart.bind(this);
 
@@ -79,6 +98,8 @@ export class MapInteractionControlled extends Component {
     this.onTouchEnd = this.onTouchEnd.bind(this);
 
     this.onWheel = this.onWheel.bind(this);
+
+    this.inertialPanning = this.inertialPanning.bind(this);
   }
 
   componentDidMount() {
@@ -134,19 +155,23 @@ export class MapInteractionControlled extends Component {
   onMouseDown(e) {
     e.preventDefault();
     this.setPointerState([e]);
+    this.stopInertialPanning();
   }
 
   onTouchStart(e) {
     e.preventDefault();
     this.setPointerState(e.touches);
+    this.stopInertialPanning();
   }
 
   onMouseUp(e) {
     this.setPointerState();
+    this.triggerInertialPanning();
   }
 
   onTouchEnd(e) {
     this.setPointerState(e.touches);
+    this.triggerInertialPanning();
   }
 
   onMouseMove(e) {
@@ -186,6 +211,21 @@ export class MapInteractionControlled extends Component {
     };
 
     const shouldPreventTouchEndDefault = Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
+
+    // Track drag positions every 150ms for inertial panning velocity calculations.
+    if (!this.props.disableInertialPanning && !this.prevDragThrottled) {
+      this.prevDragThrottled = true;
+
+      this.prevDragPos = {
+        time: performance.now(),
+        pos: {
+          x: newTranslation.x,
+          y: newTranslation.y
+        }
+      };
+
+      setTimeout(() => this.prevDragThrottled = false, 150)
+    }
 
     this.setState({
       shouldPreventTouchEndDefault
@@ -243,6 +283,82 @@ export class MapInteractionControlled extends Component {
       x: clamp(xMin, x, xMax),
       y: clamp(yMin, y, yMax)
     };
+  }
+
+  calculateDragVelocity(timestamp, pos) {
+    const timeDiff = timestamp - this.prevDragPos.time;
+    const vX = (pos.x - this.prevDragPos.pos.x) / timeDiff;
+    const vY = (pos.y - this.prevDragPos.pos.y) / timeDiff;
+
+    this.dragVelocity = {x: vX, y: vY};
+  }
+
+  stopInertialPanning() {
+    if (!this.disablePan && !this.props.disableInertialPanning) {
+      window.cancelAnimationFrame(this.inertialPanningRafID);
+    }
+  }
+
+  triggerInertialPanning() {
+    if (!this.disablePan && !this.props.disableInertialPanning) {
+
+      this.calculateDragVelocity(performance.now(), this.props.value.translation);
+
+      // Clear previous drag position to avoid triggering again with the wrong values.
+      this.prevDragPos = {
+        time: undefined,
+        pos: {
+          x: 0,
+          y: 0
+        }
+      };
+
+      this.prevDragThrottled = false;
+      this.inertialPanningLastRaf = undefined;
+
+      this.inertialPanning();
+    }
+  }
+
+  inertialPanning(timestamp) {
+    if (!this.disablePan && !this.props.disableInertialPanning) {
+      if (typeof timestamp === "undefined") {
+        timestamp = performance.now();
+      }
+
+      // Stop running when velocity drops to a negligible number.
+      if (Math.abs(this.dragVelocity.x) > 0.01 || Math.abs(this.dragVelocity.y) > 0.01) {
+        // Elapsed time between rafs in ms.
+        let elapsedTime = 1;
+
+        if (typeof this.inertialPanningLastRaf != "undefined") {
+          elapsedTime = timestamp - this.inertialPanningLastRaf;
+        }
+
+        const translation = this.props.value.translation;
+
+        const newTranslation = {
+          x: translation.x + this.dragVelocity.x*elapsedTime,
+          y: translation.y + this.dragVelocity.y*elapsedTime
+        }
+
+        this.dragVelocity = {
+          x: this.dragVelocity.x * this.props.frictionCoef,
+          y: this.dragVelocity.y * this.props.frictionCoef
+        };
+
+        this.props.onChange({
+          scale: this.props.value.scale,
+          translation: this.clampTranslation(newTranslation)
+        });
+
+        this.inertialPanningLastRaf = timestamp;
+        this.inertialPanningRafID = window.requestAnimationFrame(this.inertialPanning);
+      } else {
+        this.dragVelocity = {x: 0, y: 0};
+        this.inertialPanningLastRaf = undefined;
+      }
+    }
   }
 
   translatedOrigin(translation = this.props.value.translation) {
@@ -443,6 +559,8 @@ class MapInteractionController extends Component {
       }),
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
+      disableInertialPanning: PropTypes.bool,
+      frictionCoef: PropTypes.number,
       onChange: PropTypes.func,
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
