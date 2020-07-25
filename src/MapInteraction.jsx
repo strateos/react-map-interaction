@@ -239,52 +239,71 @@ export class MapInteractionControlled extends Component {
   }
 
   onWheel(e) {
-    if (this.props.disableZoom) {
-      return;
-    }
-    if (e.ctrlKey) {
-      const scaleChange = 2 ** (e.deltaY * 0.02); // changed from 0.002. Now 10x faster. Better zooming experience, esp on trackpad.
+		if (this.props.disableZoom) {
+			return
+		}
 
-      const newScale = clamp(
-        this.props.minScale,
-        this.props.value.scale + (1 - scaleChange),
-        this.props.maxScale
-      );
+		// React does not currently support e.webkitForce and e.mozInputSource. Check again later.
+		if (e.ctrlKey && !e.altKey) {
+			const scaleChange = 2 ** (e.deltaY * 0.02) // use Cntrl for trackpad Zoom
 
-      const mousePos = this.clientPosToTranslatedPos({
-        x: e.clientX,
-        y: e.clientY,
-      });
+			const newScale = clamp(
+				this.props.minScale,
+				this.props.value.scale + (1 - scaleChange),
+				this.props.maxScale
+			)
 
-      this.scaleFromPoint(newScale, mousePos);
-    } else {
-      const translation = this.props.value.translation;
+			const mousePos = this.clientPosToTranslatedPos({
+				x: e.clientX,
+				y: e.clientY,
+			})
 
-      const dragX = e.deltaX;
-      const dragY = e.deltaY;
-      const newTranslation = {
-        x: translation.x - dragX,
-        y: translation.y - dragY,
-      };
+			this.scaleFromPoint(newScale, mousePos)
+		} else if (!e.ctrlKey && e.altKey) {
+			const scaleChange = 2 ** (e.deltaY * 0.002) // use alt for mouseWheel Zoom
 
-      const shouldPreventTouchEndDefault =
-        Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
+			const newScale = clamp(
+				this.props.minScale,
+				this.props.value.scale + (1 - scaleChange),
+				this.props.maxScale
+			)
 
-      this.setState(
-        {
-          shouldPreventTouchEndDefault,
-        },
-        () => {
-          this.props.onChange({
-            scale: this.props.value.scale,
-            translation: this.clampTranslation(newTranslation),
-          });
-        }
-      );
-    }
-    e.preventDefault();
-    e.stopPropagation();
-  }
+			const mousePos = this.clientPosToTranslatedPos({
+				x: e.clientX,
+				y: e.clientY,
+			})
+
+			this.scaleFromPoint(newScale, mousePos)
+		} 
+		else if (!e.ctrlKey && !e.altKey) {
+			const translation = this.props.value.translation
+
+			const dragX = e.deltaX
+			const dragY = e.deltaY
+			const newTranslation = {
+				x: translation.x - dragX,
+				y: translation.y - dragY,
+			}
+
+			const shouldPreventTouchEndDefault =
+				Math.abs(dragX) > 1 || Math.abs(dragY) > 1
+
+			this.setState(
+				{
+					shouldPreventTouchEndDefault,
+				},
+				() => {
+					this.props.onChange({
+						scale: this.props.value.scale,
+						translation: this.clampTranslation(newTranslation),
+					})
+				}
+			)
+
+			e.preventDefault()
+			e.stopPropagation()
+		}
+	}
 
   setPointerState(pointers) {
     if (!pointers || pointers.length === 0) {
