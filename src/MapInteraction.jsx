@@ -238,72 +238,68 @@ export class MapInteractionControlled extends Component {
     );
   }
 
-  onWheel(e) {
-		if (this.props.disableZoom) {
-			return
-		}
+onWheel(e) {
+    if (this.props.disableZoom) {
+      return;
+    }
+    if (e.ctrlKey && !e.altKey) {
+      const scaleChange = 2 ** (e.deltaY * 0.02) // use Cntrl for trackpad Zoom
 
-		// React does not currently support e.webkitForce and e.mozInputSource. Check again later.
-		if (e.ctrlKey && !e.altKey) {
-			const scaleChange = 2 ** (e.deltaY * 0.02) // use Cntrl for trackpad Zoom
+      const newScale = clamp(
+        this.props.minScale,
+        this.props.value.scale + (1 - scaleChange),
+        this.props.maxScale
+      );
 
-			const newScale = clamp(
-				this.props.minScale,
-				this.props.value.scale + (1 - scaleChange),
-				this.props.maxScale
-			)
+      const mousePos = this.clientPosToTranslatedPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
 
-			const mousePos = this.clientPosToTranslatedPos({
-				x: e.clientX,
-				y: e.clientY,
-			})
+      this.scaleFromPoint(newScale, mousePos);
+    } else if (!e.ctrlKey && e.altKey) {
+      const scaleChange = 2 ** (e.deltaY * 0.002) // use alt for mouseWheel Zoom
 
-			this.scaleFromPoint(newScale, mousePos)
-		} else if (!e.ctrlKey && e.altKey) {
-			const scaleChange = 2 ** (e.deltaY * 0.002) // use alt for mouseWheel Zoom
+      const newScale = clamp(
+        this.props.minScale,
+        this.props.value.scale + (1 - scaleChange),
+        this.props.maxScale
+      );
 
-			const newScale = clamp(
-				this.props.minScale,
-				this.props.value.scale + (1 - scaleChange),
-				this.props.maxScale
-			)
+      const mousePos = this.clientPosToTranslatedPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
 
-			const mousePos = this.clientPosToTranslatedPos({
-				x: e.clientX,
-				y: e.clientY,
-			})
+      this.scaleFromPoint(newScale, mousePos);
+    } else if (!e.ctrlKey && !e.altKey) {
+      const translation = this.props.value.translation;
 
-			this.scaleFromPoint(newScale, mousePos)
-		} 
-		else if (!e.ctrlKey && !e.altKey) {
-			const translation = this.props.value.translation
+      const dragX = e.deltaX;
+      const dragY = e.deltaY;
+      const newTranslation = {
+        x: translation.x - dragX,
+        y: translation.y - dragY,
+      };
 
-			const dragX = e.deltaX
-			const dragY = e.deltaY
-			const newTranslation = {
-				x: translation.x - dragX,
-				y: translation.y - dragY,
-			}
+      const shouldPreventTouchEndDefault =
+        Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
 
-			const shouldPreventTouchEndDefault =
-				Math.abs(dragX) > 1 || Math.abs(dragY) > 1
-
-			this.setState(
-				{
-					shouldPreventTouchEndDefault,
-				},
-				() => {
-					this.props.onChange({
-						scale: this.props.value.scale,
-						translation: this.clampTranslation(newTranslation),
-					})
-				}
-			)
-
-			e.preventDefault()
-			e.stopPropagation()
-		}
-	}
+      this.setState(
+        {
+          shouldPreventTouchEndDefault,
+        },
+        () => {
+          this.props.onChange({
+            scale: this.props.value.scale,
+            translation: this.clampTranslation(newTranslation),
+          });
+        }
+      );
+    }
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
   setPointerState(pointers) {
     if (!pointers || pointers.length === 0) {
