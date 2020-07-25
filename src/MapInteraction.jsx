@@ -243,7 +243,7 @@ export class MapInteractionControlled extends Component {
       return;
     }
     if (e.ctrlKey) {
-      const scaleChange = 2 ** (e.deltaY * 0.002);
+      const scaleChange = 2 ** (e.deltaY * 0.02); // changed from 0.002. Now 10x faster. Better zooming experience, esp on trackpad.
 
       const newScale = clamp(
         this.props.minScale,
