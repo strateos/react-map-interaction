@@ -238,12 +238,12 @@ export class MapInteractionControlled extends Component {
     );
   }
 
-  onWheel(e) {
+onWheel(e) {
     if (this.props.disableZoom) {
       return;
     }
-    if (e.ctrlKey) {
-      const scaleChange = 2 ** (e.deltaY * 0.02); // changed from 0.002. Now 10x faster. Better zooming experience, esp on trackpad.
+    if (e.ctrlKey && !e.altKey) {
+      const scaleChange = 2 ** (e.deltaY * 0.02) // use Cntrl for trackpad Zoom
 
       const newScale = clamp(
         this.props.minScale,
@@ -257,7 +257,22 @@ export class MapInteractionControlled extends Component {
       });
 
       this.scaleFromPoint(newScale, mousePos);
-    } else {
+    } else if (!e.ctrlKey && e.altKey) {
+      const scaleChange = 2 ** (e.deltaY * 0.002) // use alt for mouseWheel Zoom
+
+      const newScale = clamp(
+        this.props.minScale,
+        this.props.value.scale + (1 - scaleChange),
+        this.props.maxScale
+      );
+
+      const mousePos = this.clientPosToTranslatedPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      this.scaleFromPoint(newScale, mousePos);
+    } else if (!e.ctrlKey && !e.altKey) {
       const translation = this.props.value.translation;
 
       const dragX = e.deltaX;
