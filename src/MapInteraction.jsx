@@ -1,4 +1,4 @@
-import React, { PueComponent } from "react";
+import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 
 import Controls from "./Controls";
