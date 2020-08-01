@@ -665,4 +665,4 @@ class MapInteractionController extends PureComponent {
   }
 }
 
-export default react.memo(MapInteractionController);
+export default React.memo(MapInteractionController);
