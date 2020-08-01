@@ -532,7 +532,7 @@ onWheel(e) {
   Determines if it's parent is controlling (eg it manages state) or leaving us uncontrolled
   (eg we manage our own internal state)
 */
-class MapInteractionController extends Component {
+class MapInteractionController extends PureComponent {
   static get propTypes() {
     return {
       children: PropTypes.func,
@@ -665,4 +665,4 @@ class MapInteractionController extends Component {
   }
 }
 
-export default MapInteractionController;
+export default react.memo(MapInteractionController);
