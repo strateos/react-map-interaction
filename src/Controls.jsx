@@ -1,7 +1,7 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-class Controls extends PureComponent {
+class Controls extends Component {
   render() {
     const {
       plusBtnContents,
