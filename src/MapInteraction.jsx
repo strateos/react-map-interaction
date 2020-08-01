@@ -665,4 +665,4 @@ class MapInteractionController extends Component {
   }
 }
 
-export default React.memo(MapInteractionController);
+export default MapInteractionController;
