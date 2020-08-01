@@ -1,4 +1,4 @@
-import React, { PueComponent } from "react";
+import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 
 import Controls from "./Controls";
@@ -532,7 +532,7 @@ onWheel(e) {
   Determines if it's parent is controlling (eg it manages state) or leaving us uncontrolled
   (eg we manage our own internal state)
 */
-class MapInteractionController extends Component {
+class MapInteractionController extends PureComponent {
   static get propTypes() {
     return {
       children: PropTypes.func,
@@ -665,4 +665,4 @@ class MapInteractionController extends Component {
   }
 }
 
-export default React.memo(MapInteractionController);
+export default react.memo(MapInteractionController);
