@@ -287,10 +287,12 @@ export class MapInteractionControlled extends Component {
 
   calculateDragVelocity(timestamp, pos) {
     const timeDiff = timestamp - this.prevDragPos.time;
-    const vX = (pos.x - this.prevDragPos.pos.x) / timeDiff;
-    const vY = (pos.y - this.prevDragPos.pos.y) / timeDiff;
+    const clampedPrevDragPos = this.clampTranslation(this.prevDragPos.pos);
+    const vX = (pos.x - clampedPrevDragPos.x) / timeDiff;
+    const vY = (pos.y - clampedPrevDragPos.y) / timeDiff;
 
     this.dragVelocity = {x: vX, y: vY};
+
   }
 
   stopInertialPanning() {
