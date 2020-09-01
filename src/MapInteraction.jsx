@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, PureComponent } from "react";
 import PropTypes from "prop-types";
 
 import Controls from "./Controls";
@@ -22,7 +22,7 @@ const translationShape = PropTypes.shape({
   It renders its children with the current state of the translation and does not do any scaling
   or translating on its own. This works on both desktop, and mobile.
 */
-export class MapInteractionControlled extends Component {
+export class MapInteractionControlled extends PureComponent {
   static get propTypes() {
     return {
       // The content that will be transformed
@@ -532,7 +532,7 @@ onWheel(e) {
   Determines if it's parent is controlling (eg it manages state) or leaving us uncontrolled
   (eg we manage our own internal state)
 */
-class MapInteractionController extends PureComponent {
+class MapInteractionController extends Component {
   static get propTypes() {
     return {
       children: PropTypes.func,
