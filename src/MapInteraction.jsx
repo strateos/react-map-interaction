@@ -39,6 +39,7 @@ export class MapInteractionControlled extends Component {
       }),
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
+      scaleRate: PropTypes.number,
       showControls: PropTypes.bool,
       plusBtnContents: PropTypes.node,
       minusBtnContents: PropTypes.node,
@@ -56,7 +57,8 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
+      scaleRate: 0.002
     };
   }
 
@@ -202,10 +204,15 @@ export class MapInteractionControlled extends Component {
       return;
     }
 
+    if (this.props.scaleRate < 0) {
+      console.warn('this.props.scaleRate should be a positive numeric value.');
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
-    const scaleChange = 2 ** (e.deltaY * 0.002);
+    const scaleChange = 2 ** (e.deltaY * this.props.scaleRate);
 
     const newScale = clamp(
       this.props.minScale,

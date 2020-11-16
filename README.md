@@ -119,6 +119,9 @@ MapInteraction doesn't require any props. It will control its own internal state
   minScale: PropTypes.number,
   maxScale: PropTypes.number,
 
+  // The speed of the scale operation. A higher number will zoom more quickly. Default is 0.002 
+  scaleRate: PropTypes.number,
+
   // When 'showControls' is 'true', plus/minus buttons are rendered
   // that let the user control the zoom factor
   showControls: PropTypes.bool,

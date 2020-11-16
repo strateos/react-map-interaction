@@ -8,6 +8,7 @@
     "test:watch": "./node_modules/mocha/bin/mocha --watch",
     "test:cover": "nyc ./node_modules/mocha/bin/mocha",
     "dist": "webpack --config webpack.config.js --mode production",
+    "dist:watch": "webpack --config webpack.config.js --mode production --watch",
     "dist:dev": "npm run dist && ./copy-to-example.sh",
     "prepare": "npm run dist",
     "storybook": "start-storybook -p 6006",

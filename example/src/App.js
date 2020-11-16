@@ -37,6 +37,7 @@ class App extends Component {
           minScale={0.05}
           maxScale={5}
           showControls
+          scaleRate={0.006}
         >
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 30, top: 30 }}>
