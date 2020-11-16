@@ -57,6 +57,7 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
+      disablePan: false,
       scaleRate: 0.002
     };
   }
