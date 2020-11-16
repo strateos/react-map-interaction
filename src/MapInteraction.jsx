@@ -203,8 +203,6 @@ export class MapInteractionControlled extends Component {
       return;
     }
 
-    console.log('wheel', e.deltaX, e.deltaY, this.props.scaleRate);
-
     if (this.props.scaleRate < 0) {
       console.warn('this.props.scaleRate should be a positive numeric value.');
       return;
