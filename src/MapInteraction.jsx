@@ -79,44 +79,44 @@ export class MapInteractionControlled extends Component {
     this.onTouchEnd = this.onTouchEnd.bind(this);
 
     this.onWheel = this.onWheel.bind(this);
+
+    this.passiveOption = makePassiveEventOption(false);
+    this.touchAndMouseEndOptions = { capture: true, ...this.passiveOption };
   }
 
   componentDidMount() {
-    const passiveOption = makePassiveEventOption(false);
-
-    this.getContainerNode().addEventListener('wheel', this.onWheel, passiveOption);
+    this.getContainerNode().addEventListener('wheel', this.onWheel, this.passiveOption);
 
     /*
       Setup events for the gesture lifecycle: start, move, end touch
     */
 
     // start gesture
-    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
-    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
+    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, this.passiveOption);
+    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, this.passiveOption);
 
     // move gesture
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    window.addEventListener('touchmove', this.onTouchMove, this.passiveOption);
+    window.addEventListener('mousemove', this.onMouseMove, this.passiveOption);
 
     // end gesture
-    const touchAndMouseEndOptions = { capture: true, ...passiveOption };
-    window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
-    window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
+    window.addEventListener('touchend', this.onTouchEnd, this.touchAndMouseEndOptions);
+    window.addEventListener('mouseup', this.onMouseUp, this.touchAndMouseEndOptions);
 
   }
 
   componentWillUnmount() {
-    this.getContainerNode().removeEventListener('wheel', this.onWheel);
+    this.getContainerNode().removeEventListener('wheel', this.onWheel, this.passiveOption);
 
     // Remove touch events
-    this.getContainerNode().removeEventListener('touchstart', this.onTouchStart);
-    window.removeEventListener('touchmove', this.onTouchMove);
-    window.removeEventListener('touchend', this.onTouchEnd);
+    this.getContainerNode().removeEventListener('touchstart', this.onTouchStart, this.passiveOption);
+    window.removeEventListener('touchmove', this.onTouchMove, this.passiveOption);
+    window.removeEventListener('touchend', this.onTouchEnd, this.touchAndMouseEndOptions);
 
     // Remove mouse events
-    this.getContainerNode().removeEventListener('mousedown', this.onMouseDown);
-    window.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
+    this.getContainerNode().removeEventListener('mousedown', this.onMouseDown, this.passiveOption);
+    window.removeEventListener('mousemove', this.onMouseMove, this.passiveOption);
+    window.removeEventListener('mouseup', this.onMouseUp, this.touchAndMouseEndOptions);
   }
 
   /*
