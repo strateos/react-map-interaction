@@ -36,6 +36,12 @@ storiesOf('MapInteractionCSS', module)
               onChange={(value) => {
                 this.setState({ value });
               }}
+              translationBounds={{
+                xMin: -250,
+                xMax: 250,
+                yMin: -250,
+                yMax: 250
+              }}
               showControls
             >
               <img src={gridImg} style={{ pointerEvents: 'none' }} alt="" />

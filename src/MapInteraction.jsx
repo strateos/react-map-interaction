@@ -31,6 +31,7 @@ export class MapInteractionControlled extends Component {
         translation: translationShape.isRequired,
       }).isRequired,
       onChange: PropTypes.func.isRequired,
+      onStoppedMoving: PropTypes.func,
 
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
@@ -167,11 +168,19 @@ export class MapInteractionControlled extends Component {
   onMouseUp(e) {
     this.setPointerState();
     this.triggerInertialPanning();
+
+    if (this.props.disableInertialPanning) {
+      this.props.onStoppedMoving();
+    }
   }
 
   onTouchEnd(e) {
     this.setPointerState(e.touches);
     this.triggerInertialPanning();
+
+    if (this.props.disableInertialPanning) {
+      this.props.onStoppedMoving();
+    }
   }
 
   onMouseMove(e) {
@@ -256,6 +265,12 @@ export class MapInteractionControlled extends Component {
     const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY });
 
     this.scaleFromPoint(newScale, mousePos);
+  }
+
+  onStoppedMoving() {
+    if (typeof this.props.onStoppedMoving !== "undefined") {
+      this.props.onStoppedMoving();
+    }
   }
 
   setPointerState(pointers) {
@@ -359,6 +374,7 @@ export class MapInteractionControlled extends Component {
       } else {
         this.dragVelocity = {x: 0, y: 0};
         this.inertialPanningLastRaf = undefined;
+        this.onStoppedMoving();
       }
     }
   }
@@ -564,6 +580,7 @@ class MapInteractionController extends Component {
       disableInertialPanning: PropTypes.bool,
       frictionCoef: PropTypes.number,
       onChange: PropTypes.func,
+      onStoppedMoving: PropTypes.func,
       translationBounds: PropTypes.shape({
         xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
       }),

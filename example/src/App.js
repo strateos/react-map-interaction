@@ -32,6 +32,8 @@ class App extends Component {
           scale={scale}
           translation={translation}
           onChange={({ scale, translation }) => this.setState({ scale, translation })}
+          onStoppedMoving={() => console.log("stopped moving")}
+          disableInertialPanning={false}
           defaultScale={1}
           defaultTranslation={{ x: 0, y: 0 }}
           minScale={0.05}
