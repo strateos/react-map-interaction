@@ -48,7 +48,8 @@ export class MapInteractionControlled extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      wheelBehavior: PropTypes.oneOf(['zoom', 'x-scroll', 'y-scroll'])
     };
   }
 
@@ -61,7 +62,8 @@ export class MapInteractionControlled extends Component {
       disableZoom: false,
       disablePan: false,
       disableInertialPanning: false,
-      frictionCoef: 0.85
+      frictionCoef: 0.85,
+      wheelBehavior: 'zoom'
     };
   }
 
@@ -247,24 +249,40 @@ export class MapInteractionControlled extends Component {
   }
 
   onWheel(e) {
-    if (this.props.disableZoom) {
-      return;
-    }
-
     e.preventDefault();
     e.stopPropagation();
 
-    const scaleChange = 2 ** (e.deltaY * 0.002);
+    if (this.props.wheelBehavior === 'zoom') {
+      if (this.props.disableZoom) {
+        return;
+      }
 
-    const newScale = clamp(
-      this.props.minScale,
-      this.props.value.scale + (1 - scaleChange),
-      this.props.maxScale
-    );
+      const scaleChange = 2 ** (e.deltaY * 0.002);
 
-    const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY });
+      const newScale = clamp(
+        this.props.minScale,
+        this.props.value.scale + (1 - scaleChange),
+        this.props.maxScale
+      );
 
-    this.scaleFromPoint(newScale, mousePos);
+      const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY });
+
+      this.scaleFromPoint(newScale, mousePos);
+    } else {
+      const translation = this.props.value.translation;
+
+      const scollChange = e.deltaY;
+
+      const newTranslation = {
+        x: translation.x + (this.props.wheelBehavior === 'x-scroll' ? (1 - scollChange) : 0),
+        y: translation.y + (this.props.wheelBehavior === 'y-scroll' ? (1 - scollChange) : 0)
+      };
+
+      this.props.onChange({
+        scale: this.props.value.scale,
+        translation: this.clampTranslation(newTranslation)
+      })
+    }
   }
 
   onStoppedMoving() {
@@ -592,7 +610,8 @@ class MapInteractionController extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      wheelBehavior: PropTypes.oneOf(['zoom', 'x-scroll', 'y-scroll']),
     };
   }
 
