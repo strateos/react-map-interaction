@@ -92,7 +92,7 @@ MapInteraction doesn't require any props. It will control its own internal state
     // contents appear at actual size, greater than 1 is zoomed, and between 0 and 1 is shrunken.
     scale: PropTypes.number,
     // The distance in pixels to translate the contents by.
-    translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),    
+    translation: PropTypes.shape({ x: PropTypes.number, y: PropTypes.number }),
   }),
 
   defaultValue: PropTypes.shape({
@@ -106,6 +106,12 @@ MapInteraction doesn't require any props. It will control its own internal state
   // Stops user from being able to pan. Note that translation can still be
   // changed via zooming, in order to keep the focal point beneath the cursor. This prop does not change the behavior of the `translation` prop.
   disablePan: PropTypes.bool,
+
+  // Stops the inertia or momentum of MapInteract after panning.
+  disableInertialPanning: PropTypes.bool,
+
+  // Determines how fast the velocity is reduced from inertial panning. Must be between 0 and 1. Numbers closer to 0 will stop faster.
+  frictionCoef: PropTypes.number,
 
   // Apply a limit to the translation in any direction in pixel values. The default is unbounded.
   translationBounds: PropTypes.shape({

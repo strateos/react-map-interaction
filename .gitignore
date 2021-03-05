@@ -3,3 +3,4 @@ dist
 .DS_Store
 .nyc_output
 coverage
+storybook-static

@@ -36,6 +36,12 @@ storiesOf('MapInteractionCSS', module)
               onChange={(value) => {
                 this.setState({ value });
               }}
+              translationBounds={{
+                xMin: -250,
+                xMax: 250,
+                yMin: -250,
+                yMax: 250
+              }}
               showControls
             >
               <img src={gridImg} style={{ pointerEvents: 'none' }} alt="" />
@@ -165,4 +171,41 @@ storiesOf('MapInteractionCSS', module)
         </MapInteractionCSS>
       </div>
     )
+  })
+  .add('Wheel Scroll Y', () => {
+    class Controller extends Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          value: {
+            scale: 1, translation: { x: 0, y: 0 }
+          }
+        };
+      }
+
+      render() {
+        return (
+          <div style={{ width: 500, height: 500, border: BLUE_BORDER }}>
+            <MapInteractionCSS
+              value={this.state.value}
+              onChange={(value) => {
+                this.setState({ value });
+              }}
+              translationBounds={{
+                xMin: -250,
+                xMax: 250,
+                yMin: -250,
+                yMax: 250
+              }}
+              showControls
+              scrollBehavior={'y-scroll'}
+            >
+              <img src={gridImg} style={{ pointerEvents: 'none' }} alt="" />
+            </MapInteractionCSS>
+          </div>
+        );
+      }
+    }
+
+    return <Controller />;
   })
