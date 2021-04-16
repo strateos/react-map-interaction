@@ -45,7 +45,9 @@ export class MapInteractionControlled extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      disableMouseWheelZoom: PropTypes.bool,
+      disableSingleTouchPan: PropTypes.bool
     };
   }
 
@@ -56,7 +58,9 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
+      disableMouseWheelZoom: false,
+      disableSingleTouchPan: false,
     };
   }
 
@@ -67,6 +71,7 @@ export class MapInteractionControlled extends Component {
       shouldPreventTouchEndDefault: false
     };
 
+    this.passiveOption = makePassiveEventOption(false);
     this.startPointerInfo = undefined;
 
     this.onMouseDown = this.onMouseDown.bind(this);
@@ -82,27 +87,55 @@ export class MapInteractionControlled extends Component {
   }
 
   componentDidMount() {
-    const passiveOption = makePassiveEventOption(false);
 
-    this.getContainerNode().addEventListener('wheel', this.onWheel, passiveOption);
+    if (!this.props.disableMouseWheelZoom) {
+      this.getContainerNode().addEventListener('wheel', this.onWheel, this.passiveOption);
+    }
 
     /*
       Setup events for the gesture lifecycle: start, move, end touch
     */
 
     // start gesture
-    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
-    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
+    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, this.passiveOption);
+    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, this.passiveOption);
 
     // move gesture
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    window.addEventListener('touchmove', this.onTouchMove, this.passiveOption);
+    window.addEventListener('mousemove', this.onMouseMove, this.passiveOption);
 
     // end gesture
-    const touchAndMouseEndOptions = { capture: true, ...passiveOption };
+    const touchAndMouseEndOptions = { capture: true, ...this.passiveOption };
     window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
     window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
 
+  }
+
+  componentWillReceiveProps(newProps) {
+    const scale = (newProps.scale != undefined) ? newProps.scale : this.state.scale;
+    const translation = newProps.translation || this.state.translation;
+
+    // if parent has overridden state then abort current user interaction
+    if (
+      translation.x != this.state.translation.x ||
+      translation.y != this.state.translation.y ||
+      scale != this.state.scale
+    ) {
+      this.setPointerState();
+    }
+
+    this.setState({
+      scale: clamp(newProps.minScale, scale, newProps.maxScale),
+      translation: this.clampTranslation(translation, newProps)
+    });
+
+    if(newProps.disableMouseWheelZoom !== this.props.disableMouseWheelZoom) {
+      if(newProps.disableMouseWheelZoom) {
+        this.containerNode.removeEventListener('wheel', this.onWheel, this.passiveOption);
+      } else {
+        this.containerNode.addEventListener('wheel', this.onWheel, this.passiveOption);
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -137,6 +170,9 @@ export class MapInteractionControlled extends Component {
   }
 
   onTouchStart(e) {
+    if(e.touches.length === 1 && this.props.disableSingleTouchPan) {
+      return;
+    }
     e.preventDefault();
     this.setPointerState(e.touches);
   }
@@ -158,15 +194,15 @@ export class MapInteractionControlled extends Component {
   }
 
   onTouchMove(e) {
-    if (!this.startPointerInfo) {
+    if (!this.startPointerInfo || (e.touches.length === 1 && this.props.disableSingleTouchPan)) {
       return;
     }
 
     e.preventDefault();
 
     const { disablePan, disableZoom } = this.props;
-
     const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+    
     if (isPinchAction && !disableZoom) {
       this.scaleFromMultiTouch(e);
     } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
@@ -382,8 +418,8 @@ export class MapInteractionControlled extends Component {
   }
 
   render() {
-    const { showControls, children } = this.props;
-    const scale = this.props.value.scale;
+    const { showControls, children, disableSingleTouchPan } = this.props;
+    const { scale } = this.state;
     // Defensively clamp the translation. This should not be necessary if we properly set state elsewhere.
     const translation = this.clampTranslation(this.props.value.translation);
 
@@ -402,6 +438,7 @@ export class MapInteractionControlled extends Component {
         this.setState({ shouldPreventTouchEndDefault: false });
       }
     }
+    const touchAction = disableSingleTouchPan ? 'pan-y pan-x' : 'none';
 
     return (
       <div
@@ -412,7 +449,7 @@ export class MapInteractionControlled extends Component {
           height: '100%',
           width: '100%',
           position: 'relative', // for absolutely positioned children
-          touchAction: 'none'
+          touchAction: touchAction
         }}
         onClickCapture={handleEventCapture}
         onTouchEndCapture={handleEventCapture}

@@ -136,6 +136,12 @@ MapInteraction doesn't require any props. It will control its own internal state
   // Classes applied to each button separately (only when 'showControls' is 'true')
   plusBtnClass: PropTypes.string,
   minusBtnClass: PropTypes.string,
+
+  // Disable zooming with scroll wheel. This allows a user to scroll the page without getting "caught" in the component
+  disableMouseWheelZoom: PropTypes.bool,
+
+  // Disable panning with one finger. This allows a user to scroll the page without getting "caught" in the component
+  disableSingleTouchPan: PropTypes.bool
 };
 ```
 
