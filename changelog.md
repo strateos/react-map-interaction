@@ -1,5 +1,7 @@
 # Unreleased
 
+Add support for React 17.
+
 # 2.0.0
 
 BREAKING: To make compatible with React 17, we got rid of componentWillReceiveProps usage. In doing so,
