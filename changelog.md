@@ -1,5 +1,7 @@
 # Unreleased
 
+Upgrade Node to 12.22.2.
+
 Add support for React 17.
 
 # 2.0.0
