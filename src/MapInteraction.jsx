@@ -1,17 +1,20 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
-import Controls from './Controls';
+import Controls from "./Controls";
 
-import { clamp, distance, midpoint, touchPt, touchDistance } from './geometry';
-import makePassiveEventOption from './makePassiveEventOption';
+import { clamp, distance, midpoint, touchPt, touchDistance } from "./geometry";
+import makePassiveEventOption from "./makePassiveEventOption";
 
 // The amount that a value of a dimension will change given a new scale
 const coordChange = (coordinate, scaleRatio) => {
-  return (scaleRatio * coordinate) - coordinate;
+  return scaleRatio * coordinate - coordinate;
 };
 
-const translationShape = PropTypes.shape({ x: PropTypes.number, y: PropTypes.number });
+const translationShape = PropTypes.shape({
+  x: PropTypes.number,
+  y: PropTypes.number,
+});
 
 /*
   This contains logic for providing a map-like interaction to any DOM node.
@@ -35,7 +38,10 @@ export class MapInteractionControlled extends Component {
       disableZoom: PropTypes.bool,
       disablePan: PropTypes.bool,
       translationBounds: PropTypes.shape({
-        xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
+        xMin: PropTypes.number,
+        xMax: PropTypes.number,
+        yMin: PropTypes.number,
+        yMax: PropTypes.number,
       }),
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
@@ -45,7 +51,7 @@ export class MapInteractionControlled extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
     };
   }
 
@@ -56,7 +62,7 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
     };
   }
 
@@ -64,7 +70,7 @@ export class MapInteractionControlled extends Component {
     super(props);
 
     this.state = {
-      shouldPreventTouchEndDefault: false
+      shouldPreventTouchEndDefault: false,
     };
 
     this.startPointerInfo = undefined;
@@ -84,39 +90,63 @@ export class MapInteractionControlled extends Component {
   componentDidMount() {
     const passiveOption = makePassiveEventOption(false);
 
-    this.getContainerNode().addEventListener('wheel', this.onWheel, passiveOption);
+    this.getContainerNode().addEventListener(
+      "wheel",
+      this.onWheel,
+      passiveOption
+    );
 
     /*
       Setup events for the gesture lifecycle: start, move, end touch
     */
 
     // start gesture
-    this.getContainerNode().addEventListener('touchstart', this.onTouchStart, passiveOption);
-    this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
+    this.getContainerNode().addEventListener(
+      "touchstart",
+      this.onTouchStart,
+      passiveOption
+    );
+    this.getContainerNode().addEventListener(
+      "mousedown",
+      this.onMouseDown,
+      passiveOption
+    );
+    this.getContainerNode().addEventListener("wheel", this.onWheel);
 
     // move gesture
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    window.addEventListener("touchmove", this.onTouchMove, passiveOption);
+    window.addEventListener("mousemove", this.onMouseMove, passiveOption);
 
     // end gesture
     const touchAndMouseEndOptions = { capture: true, ...passiveOption };
-    window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
-    window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
-
+    window.addEventListener(
+      "touchend",
+      this.onTouchEnd,
+      touchAndMouseEndOptions
+    );
+    window.addEventListener("mouseup", this.onMouseUp, touchAndMouseEndOptions);
+    window.addEventListener("gesturemove", function (e) {
+    });
   }
 
   componentWillUnmount() {
-    this.getContainerNode().removeEventListener('wheel', this.onWheel);
+    this.getContainerNode().removeEventListener("wheel", this.onWheel);
 
     // Remove touch events
-    this.getContainerNode().removeEventListener('touchstart', this.onTouchStart);
-    window.removeEventListener('touchmove', this.onTouchMove);
-    window.removeEventListener('touchend', this.onTouchEnd);
+    this.getContainerNode().removeEventListener(
+      "touchstart",
+      this.onTouchStart
+    );
+    window.removeEventListener("touchmove", this.onTouchMove);
+    window.removeEventListener("touchend", this.onTouchEnd);
 
     // Remove mouse events
-    this.getContainerNode().removeEventListener('mousedown', this.onMouseDown);
-    window.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
+    this.getContainerNode().removeEventListener("mousedown", this.onMouseDown);
+    window.removeEventListener("mousemove", this.onMouseMove);
+    window.removeEventListener("mouseup", this.onMouseUp);
+    window.addEventListener("wheel", (e) => {
+      e.preventDefault();
+    });
   }
 
   /*
@@ -132,13 +162,17 @@ export class MapInteractionControlled extends Component {
   */
 
   onMouseDown(e) {
-    e.preventDefault();
-    this.setPointerState([e]);
+    if (!this.props.textIsHovered) {
+      e.preventDefault();
+      this.setPointerState([e]);
+    }
   }
 
   onTouchStart(e) {
-    e.preventDefault();
-    this.setPointerState(e.touches);
+    if (!this.props.textIsHovered) {
+      e.preventDefault();
+      this.setPointerState(e.touches);
+    }
   }
 
   onMouseUp(e) {
@@ -150,11 +184,13 @@ export class MapInteractionControlled extends Component {
   }
 
   onMouseMove(e) {
-    if (!this.startPointerInfo || this.props.disablePan) {
-      return;
+    if (!this.props.textIsHovered) {
+      if (!this.startPointerInfo || this.props.disablePan) {
+        return;
+      }
+      e.preventDefault();
+      this.onDrag(e);
     }
-    e.preventDefault();
-    this.onDrag(e);
   }
 
   onTouchMove(e) {
@@ -166,10 +202,11 @@ export class MapInteractionControlled extends Component {
 
     const { disablePan, disableZoom } = this.props;
 
-    const isPinchAction = e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
+    const isPinchAction =
+      e.touches.length == 2 && this.startPointerInfo.pointers.length > 1;
     if (isPinchAction && !disableZoom) {
       this.scaleFromMultiTouch(e);
-    } else if ((e.touches.length === 1) && this.startPointerInfo && !disablePan) {
+    } else if (e.touches.length === 1 && this.startPointerInfo && !disablePan) {
       this.onDrag(e.touches[0]);
     }
   }
@@ -182,40 +219,71 @@ export class MapInteractionControlled extends Component {
     const dragY = pointer.clientY - startPointer.clientY;
     const newTranslation = {
       x: translation.x + dragX,
-      y: translation.y + dragY
+      y: translation.y + dragY,
     };
 
-    const shouldPreventTouchEndDefault = Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
+    const shouldPreventTouchEndDefault =
+      Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
 
-    this.setState({
-      shouldPreventTouchEndDefault
-    }, () => {
-      this.props.onChange({
-        scale: this.props.value.scale,
-        translation: this.clampTranslation(newTranslation)
-      });
-    });
+    this.setState(
+      {
+        shouldPreventTouchEndDefault,
+      },
+      () => {
+        this.props.onChange({
+          scale: this.props.value.scale,
+          translation: this.clampTranslation(newTranslation),
+        });
+      }
+    );
   }
 
   onWheel(e) {
     if (this.props.disableZoom) {
       return;
     }
+    if (e.ctrlKey) {
+      const scaleChange = 2 ** (e.deltaY * 0.002);
 
+      const newScale = clamp(
+        this.props.minScale,
+        this.props.value.scale + (1 - scaleChange),
+        this.props.maxScale
+      );
+
+      const mousePos = this.clientPosToTranslatedPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      this.scaleFromPoint(newScale, mousePos);
+    } else {
+      const translation = this.props.value.translation;
+
+      const dragX = e.deltaX;
+      const dragY = e.deltaY;
+      const newTranslation = {
+        x: translation.x - dragX,
+        y: translation.y - dragY,
+      };
+
+      const shouldPreventTouchEndDefault =
+        Math.abs(dragX) > 1 || Math.abs(dragY) > 1;
+
+      this.setState(
+        {
+          shouldPreventTouchEndDefault,
+        },
+        () => {
+          this.props.onChange({
+            scale: this.props.value.scale,
+            translation: this.clampTranslation(newTranslation),
+          });
+        }
+      );
+    }
     e.preventDefault();
     e.stopPropagation();
-
-    const scaleChange = 2 ** (e.deltaY * 0.002);
-
-    const newScale = clamp(
-      this.props.minScale,
-      this.props.value.scale + (1 - scaleChange),
-      this.props.maxScale
-    );
-
-    const mousePos = this.clientPosToTranslatedPos({ x: e.clientX, y: e.clientY });
-
-    this.scaleFromPoint(newScale, mousePos);
   }
 
   setPointerState(pointers) {
@@ -228,7 +296,7 @@ export class MapInteractionControlled extends Component {
       pointers,
       scale: this.props.value.scale,
       translation: this.props.value.translation,
-    }
+    };
   }
 
   clampTranslation(desiredTranslation, props = this.props) {
@@ -241,7 +309,7 @@ export class MapInteractionControlled extends Component {
 
     return {
       x: clamp(xMin, x, xMax),
-      y: clamp(yMin, y, yMax)
+      y: clamp(yMin, y, yMax),
     };
   }
 
@@ -249,17 +317,20 @@ export class MapInteractionControlled extends Component {
     const clientOffset = this.getContainerBoundingClientRect();
     return {
       x: clientOffset.left + translation.x,
-      y: clientOffset.top + translation.y
+      y: clientOffset.top + translation.y,
     };
   }
 
   // From a given screen point return it as a point
   // in the coordinate system of the given translation
-  clientPosToTranslatedPos({ x, y }, translation = this.props.value.translation) {
+  clientPosToTranslatedPos(
+    { x, y },
+    translation = this.props.value.translation
+  ) {
     const origin = this.translatedOrigin(translation);
     return {
       x: x - origin.x,
-      y: y - origin.y
+      y: y - origin.y,
     };
   }
 
@@ -269,17 +340,17 @@ export class MapInteractionControlled extends Component {
 
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
-      y: coordChange(focalPt.y, scaleRatio)
+      y: coordChange(focalPt.y, scaleRatio),
     };
 
     const newTranslation = {
       x: translation.x - focalPtDelta.x,
-      y: translation.y - focalPtDelta.y
+      y: translation.y - focalPtDelta.y,
     };
     this.props.onChange({
       scale: newScale,
-      translation: this.clampTranslation(newTranslation)
-    })
+      translation: this.clampTranslation(newTranslation),
+    });
   }
 
   // Given the start touches and new e.touches, scale and translate
@@ -287,38 +358,52 @@ export class MapInteractionControlled extends Component {
   // to achieve the effect of keeping the content that was directly
   // in the middle of the two fingers as the focal point throughout the zoom.
   scaleFromMultiTouch(e) {
+    /*
     const startTouches = this.startPointerInfo.pointers;
-    const newTouches   = e.touches;
+    const newTouches = e.touches;
 
     // calculate new scale
-    const dist0       = touchDistance(startTouches[0], startTouches[1]);
-    const dist1       = touchDistance(newTouches[0], newTouches[1]);
+    const dist0 = touchDistance(startTouches[0], startTouches[1]);
+    const dist1 = touchDistance(newTouches[0], newTouches[1]);
     const scaleChange = dist1 / dist0;
 
-    const startScale  = this.startPointerInfo.scale;
-    const targetScale = startScale + ((scaleChange - 1) * startScale);
-    const newScale    = clamp(this.props.minScale, targetScale, this.props.maxScale);
+    const startScale = this.startPointerInfo.scale;
+    const targetScale = startScale + (scaleChange - 1) * startScale;
+    const newScale = clamp(
+      this.props.minScale,
+      targetScale,
+      this.props.maxScale
+    );
 
     // calculate mid points
-    const startMidpoint = midpoint(touchPt(startTouches[0]), touchPt(startTouches[1]))
-    const newMidPoint   = midpoint(touchPt(newTouches[0]), touchPt(newTouches[1]));
+    const startMidpoint = midpoint(
+      touchPt(startTouches[0]),
+      touchPt(startTouches[1])
+    );
+    const newMidPoint = midpoint(
+      touchPt(newTouches[0]),
+      touchPt(newTouches[1])
+    );
 
     // The amount we need to translate by in order for
     // the mid point to stay in the middle (before thinking about scaling factor)
     const dragDelta = {
       x: newMidPoint.x - startMidpoint.x,
-      y: newMidPoint.y - startMidpoint.y
+      y: newMidPoint.y - startMidpoint.y,
     };
 
     const scaleRatio = newScale / startScale;
 
     // The point originally in the middle of the fingers on the initial zoom start
-    const focalPt = this.clientPosToTranslatedPos(startMidpoint, this.startPointerInfo.translation);
+    const focalPt = this.clientPosToTranslatedPos(
+      startMidpoint,
+      this.startPointerInfo.translation
+    );
 
     // The amount that the middle point has changed from this scaling
     const focalPtDelta = {
       x: coordChange(focalPt.x, scaleRatio),
-      y: coordChange(focalPt.y, scaleRatio)
+      y: coordChange(focalPt.y, scaleRatio),
     };
 
     // Translation is the original translation, plus the amount we dragged,
@@ -326,13 +411,14 @@ export class MapInteractionControlled extends Component {
     // scaling factor keeps the midpoint in the middle of the touch points.
     const newTranslation = {
       x: this.startPointerInfo.translation.x - focalPtDelta.x + dragDelta.x,
-      y: this.startPointerInfo.translation.y - focalPtDelta.y + dragDelta.y
+      y: this.startPointerInfo.translation.y - focalPtDelta.y + dragDelta.y,
     };
 
     this.props.onChange({
       scale: newScale,
-      translation: this.clampTranslation(newTranslation)
+      translation: this.clampTranslation(newTranslation),
     });
+    */
   }
 
   discreteScaleStepSize() {
@@ -348,15 +434,17 @@ export class MapInteractionControlled extends Component {
     const scale = clamp(minScale, targetScale, maxScale);
 
     const rect = this.getContainerBoundingClientRect();
-    const x = rect.left + (rect.width / 2);
-    const y = rect.top + (rect.height / 2);
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
 
     const focalPoint = this.clientPosToTranslatedPos({ x, y });
     this.scaleFromPoint(scale, focalPoint);
   }
 
   // Done like this so it is mockable
-  getContainerNode() { return this.containerNode }
+  getContainerNode() {
+    return this.containerNode;
+  }
   getContainerBoundingClientRect() {
     return this.getContainerNode().getBoundingClientRect();
   }
@@ -401,7 +489,7 @@ export class MapInteractionControlled extends Component {
         e.preventDefault();
         this.setState({ shouldPreventTouchEndDefault: false });
       }
-    }
+    };
 
     return (
       <div
@@ -409,10 +497,10 @@ export class MapInteractionControlled extends Component {
           this.containerNode = node;
         }}
         style={{
-          height: '100%',
-          width: '100%',
-          position: 'relative', // for absolutely positioned children
-          touchAction: 'none'
+          height: "100%",
+          width: "100%",
+          position: "relative", // for absolutely positioned children
+          touchAction: "none",
         }}
         onClickCapture={handleEventCapture}
         onTouchEndCapture={handleEventCapture}
@@ -445,7 +533,10 @@ class MapInteractionController extends Component {
       disablePan: PropTypes.bool,
       onChange: PropTypes.func,
       translationBounds: PropTypes.shape({
-        xMin: PropTypes.number, xMax: PropTypes.number, yMin: PropTypes.number, yMax: PropTypes.number
+        xMin: PropTypes.number,
+        xMax: PropTypes.number,
+        yMin: PropTypes.number,
+        yMax: PropTypes.number,
       }),
       minScale: PropTypes.number,
       maxScale: PropTypes.number,
@@ -455,7 +546,7 @@ class MapInteractionController extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
     };
   }
 
@@ -465,16 +556,16 @@ class MapInteractionController extends Component {
     const controlled = MapInteractionController.isControlled(props);
     if (controlled) {
       this.state = {
-        lastKnownValueFromProps: props.value
+        lastKnownValueFromProps: props.value,
       };
     } else {
       // Set the necessary state for controlling map interaction ourselves
       this.state = {
         value: props.defaultValue || {
           scale: 1,
-          translation: { x: 0, y: 0 }
+          translation: { x: 0, y: 0 },
         },
-        lastKnownValueFromProps: undefined
+        lastKnownValueFromProps: undefined,
       };
     }
   }
@@ -490,7 +581,11 @@ class MapInteractionController extends Component {
   */
   static getDerivedStateFromProps(props, state) {
     const nowControlled = MapInteractionController.isControlled(props);
-    const wasControlled = state.lastKnownValueFromProps && MapInteractionController.isControlled({ value: state.lastKnownValueFromProps })
+    const wasControlled =
+      state.lastKnownValueFromProps &&
+      MapInteractionController.isControlled({
+        value: state.lastKnownValueFromProps,
+      });
 
     /*
       State transitions:
@@ -505,12 +600,12 @@ class MapInteractionController extends Component {
     if (!wasControlled && nowControlled) {
       return {
         value: undefined,
-        lastKnownValueFromProps: props.value
+        lastKnownValueFromProps: props.value,
       };
     } else if (wasControlled && !nowControlled) {
       return {
         value: state.lastKnownValueFromProps,
-        lastKnownValueFromProps: undefined
+        lastKnownValueFromProps: undefined,
       };
     } else if (wasControlled && nowControlled) {
       return { lastKnownValueFromProps: props.value };
@@ -549,7 +644,7 @@ class MapInteractionController extends Component {
         value={value}
         {...this.innerProps()}
       >
-       {children}
+        {children}
       </MapInteractionControlled>
     );
   }
