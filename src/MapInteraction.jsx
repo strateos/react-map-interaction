@@ -373,7 +373,7 @@ onWheel(e) {
   // to achieve the effect of keeping the content that was directly
   // in the middle of the two fingers as the focal point throughout the zoom.
   scaleFromMultiTouch(e) {
-    /*
+    
     const startTouches = this.startPointerInfo.pointers;
     const newTouches = e.touches;
 
@@ -433,7 +433,7 @@ onWheel(e) {
       scale: newScale,
       translation: this.clampTranslation(newTranslation),
     });
-    */
+    
   }
 
   discreteScaleStepSize() {
