@@ -36,7 +36,7 @@
     "@storybook/addon-actions": "^5.1.11",
     "@storybook/addon-links": "^5.1.11",
     "@storybook/addons": "^5.1.11",
-    "@storybook/react": "^5.1.11",
+    "@storybook/react": "^7.0.6",
     "babel-loader": "^8.0.5",
     "chai": "^4.2.0",
     "enzyme": "^3.11.0",
