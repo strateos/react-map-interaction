@@ -45,7 +45,8 @@ export class MapInteractionControlled extends Component {
       btnClass: PropTypes.string,
       plusBtnClass: PropTypes.string,
       minusBtnClass: PropTypes.string,
-      controlsClass: PropTypes.string
+      controlsClass: PropTypes.string,
+      browsingContext: PropTypes.object
     };
   }
 
@@ -56,7 +57,8 @@ export class MapInteractionControlled extends Component {
       showControls: false,
       translationBounds: {},
       disableZoom: false,
-      disablePan: false
+      disablePan: false,
+      browsingContext: window
     };
   }
 
@@ -95,13 +97,13 @@ export class MapInteractionControlled extends Component {
     this.getContainerNode().addEventListener('mousedown', this.onMouseDown, passiveOption);
 
     // move gesture
-    window.addEventListener('touchmove', this.onTouchMove, passiveOption);
-    window.addEventListener('mousemove', this.onMouseMove, passiveOption);
+    this.props.browsingContext.addEventListener('touchmove', this.onTouchMove, passiveOption);
+    this.props.browsingContext.addEventListener('mousemove', this.onMouseMove, passiveOption);
 
     // end gesture
     const touchAndMouseEndOptions = { capture: true, ...passiveOption };
-    window.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
-    window.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
+    this.props.browsingContext.addEventListener('touchend', this.onTouchEnd, touchAndMouseEndOptions);
+    this.props.browsingContext.addEventListener('mouseup', this.onMouseUp, touchAndMouseEndOptions);
 
   }
 
@@ -110,13 +112,13 @@ export class MapInteractionControlled extends Component {
 
     // Remove touch events
     this.getContainerNode().removeEventListener('touchstart', this.onTouchStart);
-    window.removeEventListener('touchmove', this.onTouchMove);
-    window.removeEventListener('touchend', this.onTouchEnd);
+    this.props.browsingContext.removeEventListener('touchmove', this.onTouchMove);
+    this.props.browsingContext.removeEventListener('touchend', this.onTouchEnd);
 
     // Remove mouse events
     this.getContainerNode().removeEventListener('mousedown', this.onMouseDown);
-    window.removeEventListener('mousemove', this.onMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
+    this.props.browsingContext.removeEventListener('mousemove', this.onMouseMove);
+    this.props.browsingContext.removeEventListener('mouseup', this.onMouseUp);
   }
 
   /*

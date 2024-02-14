@@ -225,4 +225,27 @@ describe("MapInteraction", () => {
       expect(rmiInner.props().value).to.deep.equal({ scale: 1, translation: { x: 0, y: 0 } });
     });
   });
+
+  it("uses provided browsing context", () => {
+    const browsingContext = sinon.spy({addEventListener() {}, removeEventListener() {}});
+
+    wrapper = mount(<MapInteraction browsingContext={browsingContext}/>);
+
+    expect(browsingContext.addEventListener.callCount).to.equal(4);
+    expect(browsingContext.addEventListener.calledWith("touchmove")).to.be.true;
+    expect(browsingContext.addEventListener.calledWith("mousemove")).to.be.true;
+    expect(browsingContext.addEventListener.calledWith("touchend")).to.be.true;
+    expect(browsingContext.addEventListener.calledWith("mouseup")).to.be.true;
+
+    wrapper.unmount();
+
+    expect(browsingContext.removeEventListener.callCount).to.equal(4);
+    expect(browsingContext.removeEventListener.calledWith("touchmove")).to.be.true;
+    expect(browsingContext.removeEventListener.calledWith("mousemove")).to.be.true;
+    expect(browsingContext.removeEventListener.calledWith("touchend")).to.be.true;
+    expect(browsingContext.removeEventListener.calledWith("mouseup")).to.be.true;
+
+    // re-mount the component to avoid error in afterEach hook when attempting to umount
+    wrapper = mount(<MapInteraction/>);
+  });
 });
